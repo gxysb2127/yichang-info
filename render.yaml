@@ -1,0 +1,20 @@
+{
+  "groups": {
+    "api": {
+      "name": "异常信息填报系统 API",
+      "health_check_path": "/",
+      "port": 5000,
+      "repository": {
+        "path": "."
+      },
+      "services": {
+        "postgres": {
+          "plan": "free"
+        }
+      },
+      "env_vars": {
+        "PYTHON_VERSION": "3.11.0"
+      }
+    }
+  }
+}

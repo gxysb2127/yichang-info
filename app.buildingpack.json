@@ -1,0 +1,19 @@
+{
+  "buildpacks": [
+    {
+      "image": "heroku/python",
+      "command": ""
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "stack": "heroku-22",
+  "environment": {
+    "PYTHON_VERSION": "3.11.0",
+    "DISABLE_COLLECTSTATIC": "1"
+  }
+}
