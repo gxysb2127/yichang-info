@@ -1,22 +1,16 @@
 {
-  "name": "异常信息填报",
+  "name": "异常信息填报系统",
   "short_name": "异常填报",
   "description": "沙钢永兴特钢技术质量处验收班异常信息填报系统",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f7fa",
+  "background_color": "#1a73e8",
   "theme_color": "#1a73e8",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a73e8' width='512' height='512' rx='100'/><text x='256' y='320' font-size='280' text-anchor='middle' fill='white'>⚠️</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a73e8' width='512' height='512' rx='100'/><text x='256' y='320' font-size='280' text-anchor='middle' fill='white'>⚠</text></svg>",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231a73e8' width='192' height='192' rx='40'/><text x='96' y='130' font-size='100' text-anchor='middle' fill='white'>⚠️</text></svg>",
-      "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }

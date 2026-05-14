@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a73e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="沙钢永兴特钢技术质量处验收班异常信息填报系统">
+  <title>异常信息填报系统</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a73e8' width='512' height='512' rx='100'/><text x='256' y='320' font-size='280' text-anchor='middle' fill='white'>⚠</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a73e8' width='512' height='512' rx='100'/><text x='256' y='320' font-size='280' text-anchor='middle' fill='white'>⚠</text></svg>">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+/* ========================================
+   异常信息填报系统 - 高颜值移动端样式
+   沙钢永兴特钢 技术质量处验收班
+   ======================================== */
+
+/* ========== 1. 变量定义 ========== */
+:root {
+  --primary: #1a73e8;
+  --primary-light: #4fc3f7;
+  --primary-dark: #0d47a1;
+  --accent: #ff6f00;
+  --accent-light: #ffa726;
+  --bg: #f0f2f5;
+  --bg-card: #ffffff;
+  --bg-dark: #1a1a2e;
+  --text: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-light: #9ca3af;
+  --text-white: #ffffff;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-xl: 0 12px 32px rgba(0,0,0,0.15);
+  --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+  --gradient-bg: linear-gradient(180deg, #e8f0fe 0%, var(--bg) 100%);
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  font-family: var(--font-family);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { max-width: 480px; margin: 0 auto; background: var(--bg); position: relative; }
+a { color: var(--primary); text-decoration: none; }
+
+/* ========== 2. 页面容器 ========== */
+.page { display: none; min-height: 100vh; padding: 0 0 80px 0; animation: fadeIn 0.3s ease; }
+.page.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== 3. Toast提示 ========== */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: var(--text);
+  color: white;
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  z-index: 10000;
+  transition: transform 0.3s ease;
+  box-shadow: var(--shadow-lg);
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.warning { background: var(--warning); }
+
+/* ========== 4. 成功动画 ========== */
+.success-animation {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.success-animation.show { opacity: 1; }
+.success-checkmark {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: scaleIn 0.5s ease;
+}
+.success-checkmark::after {
+  content: '✓';
+  font-size: 40px;
+  color: white;
+  animation: checkIn 0.3s ease 0.2s both;
+}
+@keyframes scaleIn {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes checkIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+/* ========== 5. 登录页样式 ========== */
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+  animation: pulse 8s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.3; }
+}
+.login-header { text-align: center; margin-bottom: 48px; position: relative; z-index: 1; }
+.login-logo {
+  width: 80px; height: 80px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 24px;
+  backdrop-filter: blur(10px);
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.login-logo svg { width: 48px; height: 48px; fill: white; }
+.login-title { font-size: 28px; font-weight: 700; color: white; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.login-subtitle { font-size: 14px; color: rgba(255,255,255,0.8); letter-spacing: 1px; }
+.login-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 32px 24px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+  z-index: 1;
+}
+.login-card-title { text-align: center; font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+
+/* 用户头像选择器 */
+.user-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+.user-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.user-item:active { transform: scale(0.95); }
+.user-avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+  border: 3px solid transparent;
+  box-shadow: var(--shadow);
+}
+.user-item:hover .user-avatar, .user-item.selected .user-avatar { transform: scale(1.1); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,111,0,0.2); }
+.user-item.selected .user-avatar { animation: selected 0.5s ease; }
+@keyframes selected { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1.1); } }
+.user-name { font-size: 12px; color: var(--text-secondary); font-weight: 500; transition: color 0.3s; }
+.user-item.selected .user-name { color: var(--primary); font-weight: 600; }
+.user-role { font-size: 10px; color: var(--text-light); margin-top: 2px; }
+
+/* 登录按钮 */
+.btn-login {
+  width: 100%; padding: 16px;
+  background: var(--gradient-primary);
+  color: white; border: none;
+  border-radius: var(--radius-lg);
+  font-size: 16px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(26,115,232,0.4);
+}
+.btn-login:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,115,232,0.5); }
+.btn-login:active { transform: scale(0.98); }
+.btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ========== 6. 首页/仪表盘 ========== */
+.home-page { padding-bottom: calc(70px + var(--safe-area-bottom)); }
+.home-header {
+  background: var(--gradient-primary);
+  padding: 24px 20px 40px;
+  border-radius: 0 0 32px 32px;
+  position: relative;
+  overflow: hidden;
+}
+.home-header::before {
+  content: '';
+  position: absolute;
+  top: -50%; right: -20%;
+  width: 200px; height: 200px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+}
+.home-header::after {
+  content: '';
+  position: absolute;
+  bottom: -30%; left: -10%;
+  width: 150px; height: 150px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+}
+.home-welcome { color: white; position: relative; z-index: 1; }
+.home-welcome h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+.home-welcome .date { font-size: 13px; opacity: 0.85; }
+
+/* 统计卡片网格 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: -24px 16px 16px;
+  position: relative;
+  z-index: 2;
+}
+.stat-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.5s ease forwards;
+  opacity: 0;
+}
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.stat-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+  font-size: 20px;
+}
+.stat-icon.blue { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
+.stat-icon.green { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); }
+.stat-icon.orange { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); }
+.stat-icon.purple { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); }
+.stat-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 4px; }
+.stat-value .trend { font-size: 12px; margin-left: 4px; }
+.stat-value .trend.up { color: var(--danger); }
+.stat-value .trend.down { color: var(--success); }
+.stat-label { font-size: 12px; color: var(--text-secondary); }
+
+/* 图表区域 */
+.chart-section { margin: 16px; }
+.chart-card { background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+.chart-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.chart-title::before { content: ''; width: 4px; height: 16px; background: var(--gradient-primary); border-radius: 2px; }
+.chart-container { position: relative; height: 200px; }
+.chart-container.pie { height: 220px; }
+
+/* ========== 7. 填报页样式 ========== */
+.form-page { padding: 16px; padding-bottom: calc(70px + var(--safe-area-bottom)); }
+.form-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.form-header h2 { font-size: 20px; font-weight: 600; }
+.form-card { background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; animation: fadeInUp 0.4s ease forwards; }
+.form-card:nth-child(2) { animation-delay: 0.05s; }
+.form-card:nth-child(3) { animation-delay: 0.1s; }
+.form-card:nth-child(4) { animation-delay: 0.15s; }
+.form-card:nth-child(5) { animation-delay: 0.2s; }
+.form-card:nth-child(6) { animation-delay: 0.25s; }
+.form-card:nth-child(7) { animation-delay: 0.3s; }
+.form-group { margin-bottom: 20px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
+.form-label .icon { width: 28px; height: 28px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.form-label .required { color: var(--danger); }
+
+/* 输入框 */
+.form-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; transition: all 0.3s ease; background: #fafbfc; }
+.form-input:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(26,115,232,0.1); }
+.form-input::placeholder { color: var(--text-light); }
+
+/* 物料选择标签 */
+.material-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.material-tag {
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  background: #f3f4f6;
+  color: var(--text-secondary);
+}
+.material-tag:hover { transform: translateY(-2px); }
+.material-tag.selected { color: white; border-color: transparent; }
+
+/* 物料颜色 */
+.material-tag[data-material="钒铁"] { background: #fce4ec; color: #c2185b; }
+.material-tag[data-material="钒铁"].selected { background: linear-gradient(135deg, #e91e63, #c2185b); }
+.material-tag[data-material="钼铁"] { background: #f3e5f5; color: #7b1fa2; }
+.material-tag[data-material="钼铁"].selected { background: linear-gradient(135deg, #9c27b0, #7b1fa2); }
+.material-tag[data-material="铝块"] { background: #e3f2fd; color: #1565c0; }
+.material-tag[data-material="铝块"].selected { background: linear-gradient(135deg, #2196f3, #1565c0); }
+.material-tag[data-material="铝粒"] { background: #e0f7fa; color: #00838f; }
+.material-tag[data-material="铝粒"].selected { background: linear-gradient(135deg, #00bcd4, #00838f); }
+.material-tag[data-material="钒氮合金"] { background: #fff3e0; color: #e65100; }
+.material-tag[data-material="钒氮合金"].selected { background: linear-gradient(135deg, #ff9800, #e65100); }
+.material-tag[data-material="钛铁"] { background: #e8f5e9; color: #2e7d32; }
+.material-tag[data-material="钛铁"].selected { background: linear-gradient(135deg, #4caf50, #2e7d32); }
+.material-tag[data-material="铌铁"] { background: #efebe9; color: #5d4037; }
+.material-tag[data-material="铌铁"].selected { background: linear-gradient(135deg, #795548, #5d4037); }
+.material-tag[data-material="硼铁"] { background: #eceff1; color: #455a64; }
+.material-tag[data-material="硼铁"].selected { background: linear-gradient(135deg, #607d8b, #455a64); }
+
+/* 日期输入 */
+input[type="date"] { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; font-family: inherit; background: #fafbfc; cursor: pointer; }
+input[type="date"]:focus { outline: none; border-color: var(--primary); background: white; }
+
+/* 验收员选择 */
+.inspector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.inspector-item { display: flex; flex-direction: column; align-items: center; padding: 12px 8px; background: #f8f9fa; border-radius: var(--radius); cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; }
+.inspector-item:hover { background: #f0f1f3; }
+.inspector-item.selected { border-color: var(--primary); background: #e8f0fe; }
+.inspector-item .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 6px; }
+.inspector-item .name { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+
+/* 文本域 */
+textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
+.char-count { text-align: right; font-size: 12px; color: var(--text-light); margin-top: 4px; }
+
+/* 提交按钮 */
+.btn-submit { width: 100%; padding: 16px; background: var(--gradient-primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(26,115,232,0.4); margin-top: 24px; }
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,115,232,0.5); }
+.btn-submit:active { transform: scale(0.98); }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* ========== 8. 记录页样式 ========== */
+.records-page { padding-bottom: calc(70px + var(--safe-area-bottom)); }
+.records-header { background: var(--gradient-primary); padding: 20px 20px 36px; border-radius: 0 0 32px 32px; }
+.records-header h2 { color: white; font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+.filter-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-btn { padding: 8px 16px; background: rgba(255,255,255,0.2); border: none; border-radius: var(--radius-full); color: white; font-size: 13px; white-space: nowrap; cursor: pointer; transition: all 0.3s ease; }
+.filter-btn:hover { background: rgba(255,255,255,0.3); }
+.filter-btn.active { background: white; color: var(--primary); }
+
+/* 时间线 */
+.timeline { padding: 16px; margin-top: -16px; }
+.timeline-item { display: flex; gap: 16px; margin-bottom: 24px; animation: fadeInUp 0.4s ease forwards; opacity: 0; }
+.timeline-item:nth-child(1) { animation-delay: 0.1s; }
+.timeline-item:nth-child(2) { animation-delay: 0.15s; }
+.timeline-item:nth-child(3) { animation-delay: 0.2s; }
+.timeline-item:nth-child(4) { animation-delay: 0.25s; }
+.timeline-item:nth-child(5) { animation-delay: 0.3s; }
+.timeline-line { display: flex; flex-direction: column; align-items: center; width: 20px; }
+.timeline-dot { width: 12px; height: 12px; background: var(--primary); border-radius: 50%; border: 3px solid white; box-shadow: var(--shadow-sm); flex-shrink: 0; }
+.timeline-track { width: 2px; flex: 1; background: #e5e7eb; margin-top: 6px; }
+.timeline-item:last-child .timeline-track { display: none; }
+.timeline-content { flex: 1; background: white; border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow); }
+.record-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.record-material { display: inline-block; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; color: white; }
+.record-date { font-size: 12px; color: var(--text-secondary); }
+.record-body { margin-bottom: 12px; }
+.record-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+.record-row .label { color: var(--text-secondary); min-width: 56px; }
+.record-row .value { color: var(--text); flex: 1; }
+.record-desc { background: #f8f9fa; padding: 10px 12px; border-radius: var(--radius); font-size: 13px; color: var(--text); line-height: 1.5; margin: 10px 0; border-left: 3px solid var(--primary); }
+.record-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid #f0f0f0; }
+.record-inspectors { display: flex; }
+.record-inspector-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid white; margin-left: -6px; }
+.record-inspector-avatar:first-child { margin-left: 0; }
+.record-actions { display: flex; gap: 8px; }
+.record-action { width: 28px; height: 28px; border: none; background: #f0f1f3; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.record-action:hover { background: #e5e7eb; transform: scale(1.1); }
+.record-action.delete:hover { background: #fee2e2; }
+
+/* 空状态 */
+.empty-state { text-align: center; padding: 60px 20px; }
+.empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+.empty-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.empty-desc { font-size: 14px; color: var(--text-secondary); }
+
+/* ========== 9. 我的页面样式 ========== */
+.profile-page { padding-bottom: calc(70px + var(--safe-area-bottom)); }
+.profile-header { background: var(--gradient-primary); padding: 32px 20px 48px; text-align: center; position: relative; }
+.profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 16px; border: 4px solid rgba(255,255,255,0.3); box-shadow: var(--shadow-lg); }
+.profile-name { font-size: 22px; font-weight: 600; color: white; margin-bottom: 4px; }
+.profile-role { font-size: 14px; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.2); padding: 4px 16px; border-radius: var(--radius-full); display: inline-block; }
+.profile-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: -24px 16px 16px; position: relative; z-index: 1; }
+.profile-stat-card { background: white; border-radius: var(--radius-lg); padding: 20px; text-align: center; box-shadow: var(--shadow-md); }
+.profile-stat-value { font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.profile-stat-label { font-size: 13px; color: var(--text-secondary); }
+.menu-section { margin: 16px; }
+.menu-list { background: white; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+.menu-list.mt-16 { margin-top: 16px; }
+.menu-item { display: flex; align-items: center; padding: 16px; gap: 12px; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid #f0f0f0; }
+.menu-item:last-child { border-bottom: none; }
+.menu-item:hover { background: #f8f9fa; }
+.menu-item.danger .menu-icon { background: #fee2e2; }
+.menu-item.danger .title { color: var(--danger); }
+.menu-icon { width: 40px; height: 40px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 18px; background: #f0f1f3; flex-shrink: 0; }
+.menu-icon.blue { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
+.menu-icon.green { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); }
+.menu-icon.orange { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); }
+.menu-icon.purple { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); }
+.menu-icon.red { background: #fee2e2; }
+.menu-text { flex: 1; }
+.menu-text .title { font-size: 15px; font-weight: 500; color: var(--text); }
+.menu-text .desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.menu-arrow { font-size: 20px; color: var(--text-light); }
+
+/* ========== 10. 底部导航栏 ========== */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 0;
+  padding-bottom: calc(8px + var(--safe-area-bottom));
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  border-radius: 20px 20px 0 0;
+  z-index: 100;
+}
+.tab-item { display: flex; flex-direction: column; align-items: center; padding: 8px 16px; cursor: pointer; transition: all 0.2s; }
+.tab-item .icon { width: 24px; height: 24px; fill: var(--text-secondary); margin-bottom: 4px; transition: fill 0.2s; }
+.tab-item .label { font-size: 11px; color: var(--text-secondary); transition: color 0.2s; }
+.tab-item.active .icon { fill: var(--primary); }
+.tab-item.active .label { color: var(--primary); font-weight: 600; }
+.center-tab-btn { width: 48px; height: 48px; background: var(--gradient-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(26,115,232,0.4); }
+.center-tab-btn .icon { fill: white; margin: 0; width: 24px; height: 24px; }
+
+/* ========== 11. 模态框 ========== */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.modal-overlay.show { opacity: 1; pointer-events: auto; }
+.modal { background: white; border-radius: var(--radius-xl); width: 100%; max-width: 360px; max-height: 80vh; overflow-y: auto; transform: scale(0.9); transition: transform 0.3s; }
+.modal-overlay.show .modal { transform: scale(1); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px; border-bottom: 1px solid #f0f0f0; }
+.modal-header h3 { font-size: 18px; font-weight: 600; }
+.modal-close { width: 32px; height: 32px; border: none; background: #f0f0f0; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.modal-body { padding: 20px; }
+.modal-footer { padding: 16px 20px; border-top: 1px solid #f0f0f0; display: flex; gap: 12px; }
+.modal-footer .btn { flex: 1; padding: 12px; border-radius: var(--radius); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.modal-footer .btn-cancel { background: #f0f0f0; border: none; color: var(--text); }
+.modal-footer .btn-cancel:hover { background: #e5e7eb; }
+.modal-footer .btn-danger { background: var(--danger); border: none; color: white; }
+.modal-footer .btn-danger:hover { background: #dc2626; }
+.modal-footer .btn-primary { background: var(--primary); border: none; color: white; }
+.modal-footer .btn-primary:hover { background: #1565c0; }
+
+/* 编辑模态框 */
+.edit-form .form-group { margin-bottom: 16px; }
+.edit-form select.form-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; background: #fafbfc; cursor: pointer; }
+.edit-form select.form-input:focus { outline: none; border-color: var(--primary); background: white; }
+
+/* 导出模态框 */
+.export-options { display: flex; flex-direction: column; gap: 12px; }
+.export-option { display: flex; align-items: center; padding: 16px; background: #f8f9fa; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+.export-option:hover { background: #f0f1f3; }
+.export-option.selected { border-color: var(--primary); background: #e8f0fe; }
+.export-option input[type="radio"] { display: none; }
+.export-option .radio { width: 20px; height: 20px; border: 2px solid #d1d5db; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.export-option.selected .radio { border-color: var(--primary); background: var(--primary); }
+.export-option.selected .radio::after { content: ''; width: 8px; height: 8px; background: white; border-radius: 50%; }
+.export-option .text { font-size: 14px; color: var(--text); }
+.export-date-range { margin-top: 12px; display: none; }
+.export-date-range.show { display: block; }
+.export-date-range input { width: 100%; margin-bottom: 8px; }
+
+/* ========== 12. 关于模态框 ========== */
+.about-content { text-align: center; }
+.about-logo { width: 64px; height: 64px; background: var(--gradient-primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; }
+.about-name { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.about-version { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+.about-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+.about-info { background: #f8f9fa; padding: 16px; border-radius: var(--radius); text-align: left; }
+.about-info p { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.about-info p:last-child { margin-bottom: 0; }
+.about-info strong { color: var(--text); }
+
+/* ========== 13. 辅助类 ========== */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-16 { margin-top: 16px; }
+.mb-16 { margin-bottom: 16px; }
+
+/* ========== 14. 响应式 ========== */
+@media (max-width: 380px) {
+  .user-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid { gap: 8px; }
+  .stat-card { padding: 12px; }
+  .stat-value { font-size: 24px; }
+  .inspector-grid { grid-template-columns: repeat(2, 1fr); }
+}
+  </style>
+</head>
+<body>
+  <!-- ========== Toast提示 ========== -->
+  <div id="toast" class="toast"></div>
+  
+  <!-- ========== 成功动画 ========== -->
+  <div id="successAnimation" class="success-animation">
+    <div class="success-checkmark"></div>
+  </div>
+
+  <!-- ========== 登录页 ========== -->
+  <div id="loginPage" class="page login-page">
+    <div class="login-header">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <h1 class="login-title">异常信息填报系统</h1>
+      <p class="login-subtitle">沙钢永兴特钢 · 技术质量处验收班</p>
+    </div>
+    
+    <div class="login-card">
+      <p class="login-card-title">请选择您的账号登录</p>
+      <div id="userGrid" class="user-grid"></div>
+      <button id="loginBtn" class="btn-login" disabled>进入系统</button>
+    </div>
+  </div>
+
+  <!-- ========== 主应用容器 ========== -->
+  <div id="appContainer" class="hidden">
+    
+    <!-- ========== 首页/仪表盘 ========== -->
+    <div id="homePage" class="page home-page">
+      <div class="home-header">
+        <div class="home-welcome">
+          <h1>欢迎回来，<span id="homeUserName">-</span></h1>
+          <p class="date" id="homeDate">-</p>
+        </div>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue">📊</div>
+          <div class="stat-value"><span id="weekCount">0</span><span id="weekTrend" class="trend"></span></div>
+          <div class="stat-label">本周异常</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">📅</div>
+          <div class="stat-value"><span id="monthCount">0</span></div>
+          <div class="stat-label">本月异常</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">🏷️</div>
+          <div class="stat-value"><span id="materialTypes">0</span></div>
+          <div class="stat-label">物料种类</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple">👤</div>
+          <div class="stat-value"><span id="myCount">0</span></div>
+          <div class="stat-label">我填报数</div>
+        </div>
+      </div>
+      
+      <div class="chart-section">
+        <div class="chart-card">
+          <div class="chart-title">异常趋势（近7天）</div>
+          <div class="chart-container">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+        
+        <div class="chart-card">
+          <div class="chart-title">物料分布</div>
+          <div class="chart-container pie">
+            <canvas id="materialChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 填报页 ========== -->
+    <div id="formPage" class="page form-page">
+      <div class="form-header">
+        <h2>异常信息填报</h2>
+      </div>
+      
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label"><span class="icon">📅</span>日期<span class="required">*</span></label>
+          <input type="date" id="formDate" class="form-input">
+        </div>
+      </div>
+      
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label"><span class="icon">🏷️</span>物料名称<span class="required">*</span></label>
+          <div id="materialTags" class="material-tags"></div>
+          <input type="hidden" id="formMaterial">
+        </div>
+      </div>
+      
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label"><span class="icon">🏢</span>供货单位<span class="required">*</span></label>
+          <input type="text" id="formSupplier" class="form-input" placeholder="请输入供货单位">
+        </div>
+        <div class="form-group">
+          <label class="form-label"><span class="icon">🚛</span>车号<span class="required">*</span></label>
+          <input type="text" id="formTruck" class="form-input" placeholder="请输入车号">
+        </div>
+      </div>
+      
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label"><span class="icon">📝</span>异常情况<span class="required">*</span></label>
+          <textarea id="formDesc" class="form-input" placeholder="请详细描述异常情况..."></textarea>
+          <div class="char-count"><span id="charCount">0</span>/500</div>
+        </div>
+      </div>
+      
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label"><span class="icon">👤</span>验收员1<span class="required">*</span></label>
+          <div id="inspector1Grid" class="inspector-grid"></div>
+          <input type="hidden" id="formInspector1">
+        </div>
+        <div class="form-group">
+          <label class="form-label"><span class="icon">👤</span>验收员2<span class="required">*</span></label>
+          <div id="inspector2Grid" class="inspector-grid"></div>
+          <input type="hidden" id="formInspector2">
+        </div>
+      </div>
+      
+      <button id="submitBtn" class="btn-submit">提交异常信息</button>
+    </div>
+
+    <!-- ========== 记录页 ========== -->
+    <div id="recordsPage" class="page records-page">
+      <div class="records-header">
+        <h2>异常记录</h2>
+        <div class="filter-bar">
+          <button class="filter-btn active" data-filter="all">全部</button>
+          <button class="filter-btn" data-filter="week">本周</button>
+          <button class="filter-btn" data-filter="month">本月</button>
+        </div>
+      </div>
+      
+      <div class="timeline">
+        <div id="recordsList"></div>
+        <div id="emptyState" class="empty-state hidden">
+          <div class="empty-icon">📋</div>
+          <h3 class="empty-title">暂无记录</h3>
+          <p class="empty-desc">点击下方"填报"按钮添加异常信息</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 我的页面 ========== -->
+    <div id="profilePage" class="page profile-page">
+      <div class="profile-header">
+        <div id="profileAvatar" class="profile-avatar">👤</div>
+        <h2 id="profileName" class="profile-name">-</h2>
+        <span id="profileRole" class="profile-role">验收员</span>
+      </div>
+      
+      <div class="profile-stats">
+        <div class="profile-stat-card">
+          <div id="myMonthCount" class="profile-stat-value">0</div>
+          <div class="profile-stat-label">本月填报</div>
+        </div>
+        <div class="profile-stat-card">
+          <div id="myTotalCount" class="profile-stat-value">0</div>
+          <div class="profile-stat-label">累计填报</div>
+        </div>
+      </div>
+      
+      <div class="menu-section">
+        <div class="menu-list">
+          <div class="menu-item" onclick="showExportModal()">
+            <div class="menu-icon green">📊</div>
+            <div class="menu-text">
+              <div class="title">导出Excel</div>
+              <div class="desc">按周/月筛选导出异常记录</div>
+            </div>
+            <span class="menu-arrow">›</span>
+          </div>
+          <div class="menu-item" onclick="exportJSON()">
+            <div class="menu-icon blue">💾</div>
+            <div class="menu-text">
+              <div class="title">导出数据</div>
+              <div class="desc">导出JSON文件用于数据备份</div>
+            </div>
+            <span class="menu-arrow">›</span>
+          </div>
+          <div class="menu-item" onclick="document.getElementById('importFile').click()">
+            <div class="menu-icon purple">📂</div>
+            <div class="menu-text">
+              <div class="title">导入数据</div>
+              <div class="desc">导入其他人的JSON文件合并</div>
+            </div>
+            <span class="menu-arrow">›</span>
+          </div>
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+          <div class="menu-item" onclick="showClearConfirm()">
+            <div class="menu-icon orange">🗑️</div>
+            <div class="menu-text">
+              <div class="title">清空数据</div>
+              <div class="desc">清除本地所有记录</div>
+            </div>
+            <span class="menu-arrow">›</span>
+          </div>
+          <div class="menu-item" onclick="showAboutModal()">
+            <div class="menu-icon blue">ℹ️</div>
+            <div class="menu-text">
+              <div class="title">关于系统</div>
+              <div class="desc">版本信息和帮助</div>
+            </div>
+            <span class="menu-arrow">›</span>
+          </div>
+        </div>
+        
+        <div class="menu-list mt-16">
+          <div class="menu-item danger" onclick="logout()">
+            <div class="menu-icon red">🚪</div>
+            <div class="menu-text">
+              <div class="title">退出登录</div>
+              <div class="desc">切换账号或退出系统</div>
+            </div>
+            <span class="menu-arrow">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 底部导航栏 ========== -->
+    <nav class="tab-bar">
+      <div class="tab-item active" data-tab="home">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span class="label">首页</span>
+      </div>
+      <div class="tab-item" data-tab="form">
+        <div class="center-tab-btn">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        </div>
+        <span class="label">填报</span>
+      </div>
+      <div class="tab-item" data-tab="records">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        <span class="label">记录</span>
+      </div>
+      <div class="tab-item" data-tab="profile">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span class="label">我的</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ========== 编辑模态框 ========== -->
+  <div id="editModal" class="modal-overlay" onclick="if(event.target===this)closeEditModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>编辑记录</h3>
+        <button class="modal-close" onclick="closeEditModal()">×</button>
+      </div>
+      <div class="modal-body edit-form">
+        <input type="hidden" id="editId">
+        <div class="form-group">
+          <label class="form-label">日期</label>
+          <input type="date" id="editDate" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">物料名称</label>
+          <select id="editMaterial" class="form-input"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">供货单位</label>
+          <input type="text" id="editSupplier" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">车号</label>
+          <input type="text" id="editTruck" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">异常情况</label>
+          <textarea id="editDesc" class="form-input"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">验收员1</label>
+          <select id="editInspector1" class="form-input"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">验收员2</label>
+          <select id="editInspector2" class="form-input"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel" onclick="closeEditModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 删除确认模态框 ========== -->
+  <div id="deleteModal" class="modal-overlay" onclick="if(event.target===this)closeDeleteModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>确认删除</h3>
+        <button class="modal-close" onclick="closeDeleteModal()">×</button>
+      </div>
+      <div class="modal-body text-center">
+        <p style="margin-bottom:16px;font-size:15px">确定要删除这条异常记录吗？</p>
+        <p style="color:var(--text-secondary);font-size:13px">此操作不可恢复</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel" onclick="closeDeleteModal()">取消</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 清空数据确认模态框 ========== -->
+  <div id="clearModal" class="modal-overlay" onclick="if(event.target===this)closeClearModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>清空数据</h3>
+        <button class="modal-close" onclick="closeClearModal()">×</button>
+      </div>
+      <div class="modal-body text-center">
+        <p style="margin-bottom:16px;font-size:15px">确定要清空所有异常记录吗？</p>
+        <p style="color:var(--danger);font-size:13px">此操作不可恢复，请先导出备份！</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel" onclick="closeClearModal()">取消</button>
+        <button class="btn btn-danger" onclick="confirmClear()">确认清空</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 导出Excel模态框 ========== -->
+  <div id="exportModal" class="modal-overlay" onclick="if(event.target===this)closeExportModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>导出Excel</h3>
+        <button class="modal-close" onclick="closeExportModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="export-options">
+          <label class="export-option selected" onclick="selectExportOption(this,'week')">
+            <input type="radio" name="exportPeriod" value="week" checked>
+            <span class="radio"></span>
+            <span class="text">本周数据</span>
+          </label>
+          <label class="export-option" onclick="selectExportOption(this,'month')">
+            <input type="radio" name="exportPeriod" value="month">
+            <span class="radio"></span>
+            <span class="text">本月数据</span>
+          </label>
+          <label class="export-option" onclick="selectExportOption(this,'all')">
+            <input type="radio" name="exportPeriod" value="all">
+            <span class="radio"></span>
+            <span class="text">全部数据</span>
+          </label>
+          <label class="export-option" onclick="selectExportOption(this,'custom')">
+            <input type="radio" name="exportPeriod" value="custom">
+            <span class="radio"></span>
+            <span class="text">自定义范围</span>
+          </label>
+        </div>
+        <div id="exportDateRange" class="export-date-range">
+          <input type="date" id="exportStartDate" class="form-input" placeholder="开始日期">
+          <input type="date" id="exportEndDate" class="form-input" placeholder="结束日期">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel" onclick="closeExportModal()">取消</button>
+        <button class="btn btn-primary" onclick="doExport()">导出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 关于模态框 ========== -->
+  <div id="aboutModal" class="modal-overlay" onclick="if(event.target===this)closeAboutModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>关于系统</h3>
+        <button class="modal-close" onclick="closeAboutModal()">×</button>
+      </div>
+      <div class="modal-body about-content">
+        <div class="about-logo">⚠️</div>
+        <h2 class="about-name">异常信息填报系统</h2>
+        <p class="about-version">版本 2.0 (纯前端版)</p>
+        <p class="about-desc">沙钢永兴特钢技术质量处验收班专用<br>数据存储于本地浏览器，无需服务器</p>
+        <div class="about-info">
+          <p><strong>使用说明：</strong></p>
+          <p>• 填报后数据保存在本机浏览器</p>
+          <p>• 点击"导出数据"分享给统计员</p>
+          <p>• 统计员可通过"导入数据"合并数据</p>
+          <p>• 更换设备前请先导出数据备份</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeAboutModal()" style="flex:1">知道了</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ========== 全局变量 ==========
+let currentUser = null;
+let records = [];
+let currentFilter = 'all';
+let deleteTargetId = null;
+let trendChart = null;
+let materialChart = null;
+
+// ========== 角色名称映射 ==========
+const roleNames = { admin: '管理员', statistician: '统计员', inspector: '验收员' };
+
+// ========== 用户列表 ==========
+const users = [
+  { name: '郭鑫', role: 'admin', avatar: '👨‍💼' },
+  { name: '赵飞', role: 'statistician', avatar: '📊' },
+  { name: '郭娟娟', role: 'inspector', avatar: '👩' },
+  { name: '姬银平', role: 'inspector', avatar: '👩‍🔧' },
+  { name: '王三妮', role: 'inspector', avatar: '👩‍💻' }
+];
+
+// ========== 物料列表 ==========
+const materials = ['钒铁', '钼铁', '铝块', '铝粒', '钒氮合金', '钛铁', '铌铁', '硼铁'];
+
+// ========== 物料颜色 ==========
+const materialColors = {
+  '钒铁': '#e91e63', '钼铁': '#9c27b0', '铝块': '#2196f3', '铝粒': '#00bcd4',
+  '钒氮合金': '#ff9800', '钛铁': '#4caf50', '铌铁': '#795548', '硼铁': '#607d8b'
+};
+
+// ========== Toast提示 ==========
+function showToast(message, type = '') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast ' + type;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ========== 成功动画 ==========
+function showSuccessAnimation() {
+  const anim = document.getElementById('successAnimation');
+  anim.classList.add('show');
+  setTimeout(() => anim.classList.remove('show'), 1500);
+}
+
+// ========== UUID生成 ==========
+function uuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// ========== localStorage操作 ==========
+function saveRecords() {
+  localStorage.setItem('records', JSON.stringify(records));
+}
+
+function loadRecords() {
+  const data = localStorage.getItem('records');
+  records = data ? JSON.parse(data) : [];
+}
+
+// ========== 初始化 ==========
+function init() {
+  // 检查登录状态
+  const savedUser = localStorage.getItem('currentUser');
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+    showApp();
+  } else {
+    showLoginPage();
+  }
+  renderUserGrid();
+  renderMaterialTags();
+  renderInspectorGrids();
+  
+  // 设置默认日期
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('formDate').value = today;
+}
+
+// ========== 显示登录页 ==========
+function showLoginPage() {
+  document.getElementById('loginPage').classList.add('active');
+  document.getElementById('appContainer').classList.add('hidden');
+}
+
+// ========== 显示应用 ==========
+function showApp() {
+  document.getElementById('loginPage').classList.remove('active');
+  document.getElementById('appContainer').classList.remove('hidden');
+  
+  document.getElementById('homeUserName').textContent = currentUser.name;
+  document.getElementById('profileAvatar').textContent = currentUser.avatar || '👤';
+  document.getElementById('profileName').textContent = currentUser.name;
+  document.getElementById('profileRole').textContent = roleNames[currentUser.role] || currentUser.role;
+  
+  const now = new Date();
+  document.getElementById('homeDate').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${getWeekday(now)}`;
+  
+  switchTab('home');
+  loadData();
+}
+
+// ========== 获取星期 ==========
+function getWeekday(date) {
+  return ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][date.getDay()];
+}
+
+// ========== 渲染用户网格 ==========
+function renderUserGrid() {
+  const grid = document.getElementById('userGrid');
+  grid.innerHTML = users.map(u => `
+    <div class="user-item" data-name="${u.name}" onclick="selectUser(this)">
+      <div class="user-avatar">${u.avatar}</div>
+      <div class="user-name">${u.name}</div>
+      <div class="user-role">${roleNames[u.role]}</div>
+    </div>
+  `).join('');
+}
+
+// ========== 选择用户 ==========
+function selectUser(el) {
+  document.querySelectorAll('.user-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('loginBtn').disabled = false;
+  window.selectedUserName = el.dataset.name;
+}
+
+// ========== 登录 ==========
+function doLogin() {
+  const name = window.selectedUserName;
+  if (!name) { showToast('请先选择账号', 'warning'); return; }
+  
+  currentUser = users.find(u => u.name === name);
+  localStorage.setItem('currentUser', JSON.stringify(currentUser));
+  showApp();
+  showToast('登录成功', 'success');
+}
+
+// ========== 退出登录 ==========
+function logout() {
+  localStorage.removeItem('currentUser');
+  currentUser = null;
+  window.selectedUserName = null;
+  document.getElementById('loginBtn').disabled = true;
+  document.querySelectorAll('.user-item').forEach(i => i.classList.remove('selected'));
+  showLoginPage();
+  showToast('已退出登录');
+}
+
+// ========== Tab切换 ==========
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  
+  const pageMap = { home: 'homePage', form: 'formPage', records: 'recordsPage', profile: 'profilePage' };
+  document.getElementById(pageMap[tabName]).classList.add('active');
+  
+  if (tabName === 'home') loadDashboardStats();
+  else if (tabName === 'records') renderRecords();
+  else if (tabName === 'profile') loadMyStats();
+}
+
+// ========== 加载数据 ==========
+function loadData() {
+  loadRecords();
+  loadDashboardStats();
+  loadMyStats();
+  renderRecords();
+}
+
+// ========== 渲染物料标签 ==========
+function renderMaterialTags() {
+  const container = document.getElementById('materialTags');
+  container.innerHTML = materials.map(m => `
+    <div class="material-tag" data-material="${m}" onclick="selectMaterial(this)">${m}</div>
+  `).join('');
+}
+
+// ========== 选择物料 ==========
+function selectMaterial(el) {
+  document.querySelectorAll('.material-tag').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('formMaterial').value = el.dataset.material;
+}
+
+// ========== 渲染验收员网格 ==========
+function renderInspectorGrids() {
+  const inspectors = users;
+  document.getElementById('inspector1Grid').innerHTML = inspectors.map(u => `
+    <div class="inspector-item" data-name="${u.name}" onclick="selectInspector(this, 1)">
+      <div class="avatar">${u.avatar}</div>
+      <div class="name">${u.name}</div>
+    </div>
+  `).join('');
+  document.getElementById('inspector2Grid').innerHTML = inspectors.map(u => `
+    <div class="inspector-item" data-name="${u.name}" onclick="selectInspector(this, 2)">
+      <div class="avatar">${u.avatar}</div>
+      <div class="name">${u.name}</div>
+    </div>
+  `).join('');
+  
+  // 编辑模态框选项
+  const selectHtml = '<option value="">请选择</option>' + inspectors.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+  document.getElementById('editMaterial').innerHTML = materials.map(m => `<option value="${m}">${m}</option>`).join('');
+  document.getElementById('editInspector1').innerHTML = selectHtml;
+  document.getElementById('editInspector2').innerHTML = selectHtml;
+}
+
+// ========== 选择验收员 ==========
+function selectInspector(el, num) {
+  const grid = num === 1 ? 'inspector1Grid' : 'inspector2Grid';
+  const hiddenField = num === 1 ? 'formInspector1' : 'formInspector2';
+  
+  document.querySelectorAll(`#${grid} .inspector-item`).forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById(hiddenField).value = el.dataset.name;
+}
+
+// ========== 加载仪表盘统计 ==========
+function loadDashboardStats() {
+  loadRecords();
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  
+  const weekRecords = records.filter(r => new Date(r.date) >= weekAgo);
+  const monthRecords = records.filter(r => new Date(r.date) >= monthStart);
+  const myRecords = records.filter(r => r.created_by === currentUser.name);
+  const materialSet = new Set(records.map(r => r.material_name));
+  
+  document.getElementById('weekCount').textContent = weekRecords.length;
+  document.getElementById('monthCount').textContent = monthRecords.length;
+  document.getElementById('materialTypes').textContent = materialSet.size || materials.length;
+  document.getElementById('myCount').textContent = myRecords.length;
+  
+  renderCharts(records);
+}
+
+// ========== 渲染图表 ==========
+function renderCharts(allRecords) {
+  renderTrendChart(allRecords);
+  renderMaterialChart(allRecords);
+}
+
+// ========== 渲染趋势图 ==========
+function renderTrendChart(allRecords) {
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  if (trendChart) trendChart.destroy();
+  
+  // 最近7天数据
+  const days = [];
+  const counts = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+    days.push(dateStr);
+    counts.push(allRecords.filter(r => r.date === d.toISOString().split('T')[0]).length);
+  }
+  
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{
+        label: '异常数',
+        data: counts,
+        borderColor: '#1a73e8',
+        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#1a73e8',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      },
+      interaction: { intersect: false, mode: 'index' }
+    }
+  });
+}
+
+// ========== 渲染物料饼图 ==========
+function renderMaterialChart(allRecords) {
+  const ctx = document.getElementById('materialChart').getContext('2d');
+  if (materialChart) materialChart.destroy();
+  
+  const dist = {};
+  allRecords.forEach(r => { dist[r.material_name] = (dist[r.material_name] || 0) + 1; });
+  
+  const data = Object.entries(dist).map(([name, value]) => ({ name, value }));
+  const colors = data.map(d => materialColors[d.name] || '#607d8b');
+  
+  materialChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.name),
+      datasets: [{ data: data.map(d => d.value), backgroundColor: colors, borderWidth: 0, hoverOffset: 10 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } }
+      }
+    }
+  });
+}
+
+// ========== 加载我的统计 ==========
+function loadMyStats() {
+  loadRecords();
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const myRecords = records.filter(r => r.created_by === currentUser.name);
+  const myMonthRecords = myRecords.filter(r => new Date(r.date) >= monthStart);
+  
+  document.getElementById('myMonthCount').textContent = myMonthRecords.length;
+  document.getElementById('myTotalCount').textContent = myRecords.length;
+}
+
+// ========== 提交表单 ==========
+function submitForm() {
+  const date = document.getElementById('formDate').value;
+  const material = document.getElementById('formMaterial').value;
+  const supplier = document.getElementById('formSupplier').value.trim();
+  const truck = document.getElementById('formTruck').value.trim();
+  const desc = document.getElementById('formDesc').value.trim();
+  const inspector1 = document.getElementById('formInspector1').value;
+  const inspector2 = document.getElementById('formInspector2').value;
+  
+  if (!date || !material || !supplier || !truck || !desc || !inspector1 || !inspector2) {
+    showToast('请填写完整信息', 'warning'); return;
+  }
+  if (inspector1 === inspector2) { showToast('两个验收员不能相同', 'warning'); return; }
+  
+  const record = {
+    id: uuid(),
+    date, material_name: material, supplier, truck_no: truck,
+    abnormal_desc: desc, inspector1, inspector2,
+    created_by: currentUser.name,
+    created_at: new Date().toISOString()
+  };
+  
+  records.unshift(record);
+  saveRecords();
+  
+  showSuccessAnimation();
+  showToast('提交成功', 'success');
+  resetForm();
+  
+  setTimeout(() => { loadData(); switchTab('records'); }, 500);
+}
+
+// ========== 重置表单 ==========
+function resetForm() {
+  document.getElementById('formMaterial').value = '';
+  document.getElementById('formSupplier').value = '';
+  document.getElementById('formTruck').value = '';
+  document.getElementById('formDesc').value = '';
+  document.getElementById('formInspector1').value = '';
+  document.getElementById('formInspector2').value = '';
+  document.getElementById('charCount').textContent = '0';
+  document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('.material-tag').forEach(t => t.classList.remove('selected'));
+  document.querySelectorAll('.inspector-item').forEach(i => i.classList.remove('selected'));
+}
+
+// ========== 筛选记录 ==========
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('filter-btn')) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    currentFilter = e.target.dataset.filter;
+    renderRecords();
+  }
+});
+
+// ========== 渲染记录列表 ==========
+function renderRecords() {
+  loadRecords();
+  const container = document.getElementById('recordsList');
+  const emptyState = document.getElementById('emptyState');
+  
+  let filtered = records;
+  const now = new Date();
+  
+  if (currentFilter === 'week') {
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    filtered = records.filter(r => new Date(r.date) >= weekAgo);
+  } else if (currentFilter === 'month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    filtered = records.filter(r => new Date(r.date) >= monthStart);
+  }
+  
+  if (filtered.length === 0) { container.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
+  emptyState.classList.add('hidden');
+  
+  container.innerHTML = filtered.map(record => {
+    const color = materialColors[record.material_name] || '#607d8b';
+    const canEdit = currentUser.role === 'admin' || record.created_by === currentUser.name;
+    
+    return `
+      <div class="timeline-item">
+        <div class="timeline-line"><div class="timeline-dot"></div><div class="timeline-track"></div></div>
+        <div class="timeline-content">
+          <div class="record-header">
+            <span class="record-material" style="background:${color}">${record.material_name}</span>
+            <span class="record-date">${record.date}</span>
+          </div>
+          <div class="record-body">
+            <div class="record-row"><span class="label">供货单位</span><span class="value">${record.supplier || '-'}</span></div>
+            <div class="record-row"><span class="label">车号</span><span class="value">${record.truck_no || '-'}</span></div>
+            <div class="record-desc">${record.abnormal_desc || '-'}</div>
+          </div>
+          <div class="record-footer">
+            <div class="record-inspectors">
+              <div class="record-inspector-avatar" title="${record.inspector1}">${getInspectorAvatar(record.inspector1)}</div>
+              <div class="record-inspector-avatar" title="${record.inspector2}">${getInspectorAvatar(record.inspector2)}</div>
+            </div>
+            <div class="record-actions">
+              ${canEdit ? `<button class="record-action" onclick="editRecord('${record.id}')" title="编辑">✏️</button><button class="record-action delete" onclick="showDeleteConfirm('${record.id}')" title="删除">🗑️</button>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ========== 获取验收员头像 ==========
+function getInspectorAvatar(name) {
+  const user = users.find(u => u.name === name);
+  return user ? (user.avatar || '👤') : '👤';
+}
+
+// ========== 编辑记录 ==========
+function editRecord(id) {
+  const record = records.find(r => r.id === id);
+  if (!record) return;
+  
+  document.getElementById('editId').value = id;
+  document.getElementById('editDate').value = record.date;
+  document.getElementById('editMaterial').value = record.material_name;
+  document.getElementById('editSupplier').value = record.supplier;
+  document.getElementById('editTruck').value = record.truck_no;
+  document.getElementById('editDesc').value = record.abnormal_desc;
+  document.getElementById('editInspector1').value = record.inspector1;
+  document.getElementById('editInspector2').value = record.inspector2;
+  
+  document.getElementById('editModal').classList.add('show');
+}
+
+function closeEditModal() { document.getElementById('editModal').classList.remove('show'); }
+
+// ========== 保存编辑 ==========
+function saveEdit() {
+  const id = document.getElementById('editId').value;
+  const idx = records.findIndex(r => r.id === id);
+  if (idx === -1) return;
+  
+  records[idx] = {
+    ...records[idx],
+    date: document.getElementById('editDate').value,
+    material_name: document.getElementById('editMaterial').value,
+    supplier: document.getElementById('editSupplier').value,
+    truck_no: document.getElementById('editTruck').value,
+    abnormal_desc: document.getElementById('editDesc').value,
+    inspector1: document.getElementById('editInspector1').value,
+    inspector2: document.getElementById('editInspector2').value
+  };
+  
+  saveRecords();
+  closeEditModal();
+  showToast('保存成功', 'success');
+  loadData();
+}
+
+// ========== 删除记录 ==========
+function showDeleteConfirm(id) { deleteTargetId = id; document.getElementById('deleteModal').classList.add('show'); }
+function closeDeleteModal() { deleteTargetId = null; document.getElementById('deleteModal').classList.remove('show'); }
+
+function confirmDelete() {
+  if (!deleteTargetId) return;
+  records = records.filter(r => r.id !== deleteTargetId);
+  saveRecords();
+  closeDeleteModal();
+  showToast('删除成功', 'success');
+  loadData();
+}
+
+// ========== 清空数据 ==========
+function showClearConfirm() { document.getElementById('clearModal').classList.add('show'); }
+function closeClearModal() { document.getElementById('clearModal').classList.remove('show'); }
+
+function confirmClear() {
+  records = [];
+  saveRecords();
+  closeClearModal();
+  showToast('数据已清空', 'success');
+  loadData();
+}
+
+// ========== 导出模态框 ==========
+function showExportModal() { document.getElementById('exportModal').classList.add('show'); }
+function closeExportModal() { document.getElementById('exportModal').classList.remove('show'); }
+
+function selectExportOption(el, value) {
+  document.querySelectorAll('.export-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  el.querySelector('input').checked = true;
+  document.getElementById('exportDateRange').classList.toggle('show', value === 'custom');
+}
+
+// ========== 导出Excel ==========
+function doExport() {
+  const period = document.querySelector('input[name="exportPeriod"]:checked').value;
+  let filtered = records;
+  const now = new Date();
+  
+  if (period === 'week') {
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    filtered = records.filter(r => new Date(r.date) >= weekAgo);
+  } else if (period === 'month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    filtered = records.filter(r => new Date(r.date) >= monthStart);
+  } else if (period === 'custom') {
+    const start = document.getElementById('exportStartDate').value;
+    const end = document.getElementById('exportEndDate').value;
+    if (start && end) {
+      filtered = records.filter(r => r.date >= start && r.date <= end);
+    }
+  }
+  
+  if (filtered.length === 0) { showToast('没有可导出的数据', 'warning'); return; }
+  
+  const data = filtered.map(r => [r.date, r.material_name, r.supplier, r.truck_no, r.abnormal_desc, r.inspector1, r.inspector2]);
+  
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['日期', '物料名称', '供货单位', '车号', '异常情况', '验收员1', '验收员2'],
+    ...data
+  ]);
+  
+  // 设置列宽
+  ws['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 25 }, { wch: 14 }, { wch: 40 }, { wch: 10 }, { wch: 10 }];
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '异常记录');
+  
+  const filename = `异常记录_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(wb, filename);
+  
+  closeExportModal();
+  showToast(`已导出${filtered.length}条记录`, 'success');
+}
+
+// ========== 导出JSON ==========
+function exportJSON() {
+  loadRecords();
+  if (records.length === 0) { showToast('没有可导出的数据', 'warning'); return; }
+  
+  const myRecords = records.filter(r => r.created_by === currentUser.name);
+  const data = { user: currentUser.name, exportTime: new Date().toISOString(), records: myRecords };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${currentUser.name}_异常记录_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showToast(`已导出${myRecords.length}条记录`, 'success');
+}
+
+// ========== 导入JSON ==========
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.records || !Array.isArray(data.records)) {
+        showToast('文件格式错误', 'error'); return;
+      }
+      
+      loadRecords();
+      const before = records.length;
+      
+      // 合并去重
+      data.records.forEach(r => {
+        if (!records.find(existing => existing.id === r.id)) {
+          records.push(r);
+        }
+      });
+      
+      saveRecords();
+      const after = records.length;
+      
+      showToast(`成功导入${after - before}条新记录`, 'success');
+      loadData();
+    } catch (err) {
+      showToast('文件解析失败', 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ========== 关于模态框 ==========
+function showAboutModal() { document.getElementById('aboutModal').classList.add('show'); }
+function closeAboutModal() { document.getElementById('aboutModal').classList.remove('show'); }
+
+// ========== 事件绑定 ==========
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  
+  document.querySelectorAll('.tab-item').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+  
+  document.getElementById('submitBtn').addEventListener('click', submitForm);
+  
+  document.getElementById('formDesc').addEventListener('input', e => {
+    document.getElementById('charCount').textContent = e.target.value.length;
+  });
+  
+  // 注册Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+});
+</script>
+</body>
+</html>
