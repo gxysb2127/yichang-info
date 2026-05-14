@@ -1,12 +1,13 @@
 {
-  "name": "异常信息填报系统",
+  "name": "异常信息填报系统 V3",
   "short_name": "异常填报",
-  "description": "沙钢永兴特钢技术质量处验收班异常信息填报系统",
+  "description": "沙钢永兴特钢技术质量处验收班异常信息填报系统 V3 云端版",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a73e8",
   "theme_color": "#1a73e8",
   "orientation": "portrait",
+  "version": "3.0",
   "icons": [
     {
       "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a73e8' width='512' height='512' rx='100'/><text x='256' y='320' font-size='280' text-anchor='middle' fill='white'>⚠</text></svg>",

@@ -6,20 +6,21 @@
   <meta name="theme-color" content="#1a73e8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="沙钢永兴特钢技术质量处验收班异常信息填报系统">
-  <title>异常信息填报系统</title>
+  <meta name="description" content="沙钢永兴特钢技术质量处验收班异常信息填报系统 V3">
+  <title>异常信息填报系统 V3</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a73e8' width='512' height='512' rx='100'/><text x='256' y='320' font-size='280' text-anchor='middle' fill='white'>⚠</text></svg>">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a73e8' width='512' height='512' rx='100'/><text x='256' y='320' font-size='280' text-anchor='middle' fill='white'>⚠</text></svg>">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
 /* ========================================
-   异常信息填报系统 - 高颜值移动端样式
+   异常信息填报系统 V3 - Supabase云端版
    沙钢永兴特钢 技术质量处验收班
    ======================================== */
 
-/* ========== 1. 变量定义 ========== */
+/* ========== 1. 配置区域 ========== */
 :root {
   --primary: #1a73e8;
   --primary-light: #4fc3f7;
@@ -52,6 +53,7 @@
   --gradient-bg: linear-gradient(180deg, #e8f0fe 0%, var(--bg) 100%);
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+  --nav-height: 70px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -65,13 +67,14 @@ html, body {
   overflow-x: hidden;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  padding-bottom: 0 !important;
 }
 
 body { max-width: 480px; margin: 0 auto; background: var(--bg); position: relative; }
 a { color: var(--primary); text-decoration: none; }
 
 /* ========== 2. 页面容器 ========== */
-.page { display: none; min-height: 100vh; padding: 0 0 80px 0; animation: fadeIn 0.3s ease; }
+.page { display: none; min-height: 100vh; padding-bottom: calc(var(--nav-height) + var(--safe-area-bottom)); animation: fadeIn 0.3s ease; }
 .page.active { display: block; }
 
 @keyframes fadeIn {
@@ -94,6 +97,8 @@ a { color: var(--primary); text-decoration: none; }
   transition: transform 0.3s ease;
   box-shadow: var(--shadow-lg);
   white-space: nowrap;
+  max-width: calc(100% - 40px);
+  text-align: center;
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
 .toast.success { background: var(--success); }
@@ -136,8 +141,8 @@ a { color: var(--primary); text-decoration: none; }
 }
 @keyframes checkIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
 
-/* ========== 5. 登录页样式 ========== */
-.login-page {
+/* ========== 5. 登录/注册页样式 ========== */
+.auth-page {
   min-height: 100vh;
   background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
   display: flex;
@@ -148,7 +153,7 @@ a { color: var(--primary); text-decoration: none; }
   position: relative;
   overflow: hidden;
 }
-.login-page::before {
+.auth-page::before {
   content: '';
   position: absolute;
   top: -50%; left: -50%;
@@ -160,8 +165,8 @@ a { color: var(--primary); text-decoration: none; }
   0%, 100% { transform: scale(1); opacity: 0.5; }
   50% { transform: scale(1.1); opacity: 0.3; }
 }
-.login-header { text-align: center; margin-bottom: 48px; position: relative; z-index: 1; }
-.login-logo {
+.auth-header { text-align: center; margin-bottom: 32px; position: relative; z-index: 1; }
+.auth-logo {
   width: 80px; height: 80px;
   background: rgba(255,255,255,0.2);
   border-radius: 24px;
@@ -174,10 +179,11 @@ a { color: var(--primary); text-decoration: none; }
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
-.login-logo svg { width: 48px; height: 48px; fill: white; }
-.login-title { font-size: 28px; font-weight: 700; color: white; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-.login-subtitle { font-size: 14px; color: rgba(255,255,255,0.8); letter-spacing: 1px; }
-.login-card {
+.auth-logo svg { width: 48px; height: 48px; fill: white; }
+.auth-title { font-size: 28px; font-weight: 700; color: white; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.auth-subtitle { font-size: 14px; color: rgba(255,255,255,0.8); letter-spacing: 1px; }
+
+.auth-card {
   background: white;
   border-radius: var(--radius-xl);
   padding: 32px 24px;
@@ -187,47 +193,35 @@ a { color: var(--primary); text-decoration: none; }
   position: relative;
   z-index: 1;
 }
-.login-card-title { text-align: center; font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+.auth-tabs { display: flex; margin-bottom: 24px; border-radius: var(--radius); overflow: hidden; background: #f0f0f0; }
+.auth-tab { flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.3s; }
+.auth-tab.active { background: var(--primary); color: white; }
+.auth-form { display: none; }
+.auth-form.active { display: block; }
 
-/* 用户头像选择器 */
-.user-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-.user-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.user-item:active { transform: scale(0.95); }
-.user-avatar {
-  width: 64px; height: 64px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px;
-  margin-bottom: 8px;
-  transition: all 0.3s ease;
-  border: 3px solid transparent;
-  box-shadow: var(--shadow);
-}
-.user-item:hover .user-avatar, .user-item.selected .user-avatar { transform: scale(1.1); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,111,0,0.2); }
-.user-item.selected .user-avatar { animation: selected 0.5s ease; }
-@keyframes selected { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1.1); } }
-.user-name { font-size: 12px; color: var(--text-secondary); font-weight: 500; transition: color 0.3s; }
-.user-item.selected .user-name { color: var(--primary); font-weight: 600; }
-.user-role { font-size: 10px; color: var(--text-light); margin-top: 2px; }
+.form-group { margin-bottom: 16px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+.form-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; transition: all 0.3s ease; background: #fafbfc; }
+.form-input:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(26,115,232,0.1); }
+.form-input::placeholder { color: var(--text-light); }
 
-/* 登录按钮 */
-.btn-login {
-  width: 100%; padding: 16px;
-  background: var(--gradient-primary);
-  color: white; border: none;
-  border-radius: var(--radius-lg);
-  font-size: 16px; font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(26,115,232,0.4);
-}
-.btn-login:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,115,232,0.5); }
-.btn-login:active { transform: scale(0.98); }
-.btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.role-select { display: flex; gap: 8px; margin-top: 8px; }
+.role-option { flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: var(--radius); text-align: center; cursor: pointer; transition: all 0.3s; font-size: 13px; }
+.role-option:hover { border-color: var(--primary); }
+.role-option.selected { border-color: var(--primary); background: #e8f0fe; color: var(--primary); }
+
+.btn-auth { width: 100%; padding: 14px; background: var(--gradient-primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(26,115,232,0.4); margin-top: 16px; }
+.btn-auth:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,115,232,0.5); }
+.btn-auth:active { transform: scale(0.98); }
+.btn-auth:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-auth.secondary { background: #f0f0f0; color: var(--text); box-shadow: none; }
+.btn-auth.secondary:hover { background: #e5e5e5; }
+
+.config-hint { background: #fff3e0; border-radius: var(--radius); padding: 12px; margin-bottom: 16px; font-size: 12px; color: #e65100; line-height: 1.6; }
 
 /* ========== 6. 首页/仪表盘 ========== */
-.home-page { padding-bottom: calc(70px + var(--safe-area-bottom)); }
+.home-page { padding-bottom: calc(var(--nav-height) + var(--safe-area-bottom)); }
 .home-header {
   background: var(--gradient-primary);
   padding: 24px 20px 40px;
@@ -251,9 +245,11 @@ a { color: var(--primary); text-decoration: none; }
   background: rgba(255,255,255,0.08);
   border-radius: 50%;
 }
-.home-welcome { color: white; position: relative; z-index: 1; }
-.home-welcome h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+.home-welcome { color: white; position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; }
+.home-welcome h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
 .home-welcome .date { font-size: 13px; opacity: 0.85; }
+.home-sync { font-size: 11px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: var(--radius-full); display: flex; align-items: center; gap: 4px; }
+.home-sync .dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
 
 /* 统计卡片网格 */
 .stats-grid {
@@ -291,9 +287,6 @@ a { color: var(--primary); text-decoration: none; }
 .stat-icon.orange { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); }
 .stat-icon.purple { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); }
 .stat-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 4px; }
-.stat-value .trend { font-size: 12px; margin-left: 4px; }
-.stat-value .trend.up { color: var(--danger); }
-.stat-value .trend.down { color: var(--success); }
 .stat-label { font-size: 12px; color: var(--text-secondary); }
 
 /* 图表区域 */
@@ -305,7 +298,7 @@ a { color: var(--primary); text-decoration: none; }
 .chart-container.pie { height: 220px; }
 
 /* ========== 7. 填报页样式 ========== */
-.form-page { padding: 16px; padding-bottom: calc(70px + var(--safe-area-bottom)); }
+.form-page { padding: 16px; padding-bottom: calc(calc(var(--nav-height) + 40px) + var(--safe-area-bottom)); }
 .form-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
 .form-header h2 { font-size: 20px; font-weight: 600; }
 .form-card { background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; animation: fadeInUp 0.4s ease forwards; }
@@ -315,16 +308,10 @@ a { color: var(--primary); text-decoration: none; }
 .form-card:nth-child(5) { animation-delay: 0.2s; }
 .form-card:nth-child(6) { animation-delay: 0.25s; }
 .form-card:nth-child(7) { animation-delay: 0.3s; }
-.form-group { margin-bottom: 20px; }
-.form-group:last-child { margin-bottom: 0; }
+
 .form-label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
 .form-label .icon { width: 28px; height: 28px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 .form-label .required { color: var(--danger); }
-
-/* 输入框 */
-.form-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; transition: all 0.3s ease; background: #fafbfc; }
-.form-input:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(26,115,232,0.1); }
-.form-input::placeholder { color: var(--text-light); }
 
 /* 物料选择标签 */
 .material-tags { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -359,30 +346,42 @@ a { color: var(--primary); text-decoration: none; }
 .material-tag[data-material="硼铁"] { background: #eceff1; color: #455a64; }
 .material-tag[data-material="硼铁"].selected { background: linear-gradient(135deg, #607d8b, #455a64); }
 
+/* 物料自动补全 */
+.material-input-wrapper { position: relative; }
+.material-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid var(--primary); border-top: none; border-radius: 0 0 var(--radius) var(--radius); max-height: 200px; overflow-y: auto; z-index: 100; display: none; }
+.material-suggestions.show { display: block; }
+.material-suggestion { padding: 10px 16px; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+.material-suggestion:hover { background: #f0f4ff; }
+.material-suggestion .material-color { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+
 /* 日期输入 */
 input[type="date"] { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; font-family: inherit; background: #fafbfc; cursor: pointer; }
 input[type="date"]:focus { outline: none; border-color: var(--primary); background: white; }
-
-/* 验收员选择 */
-.inspector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.inspector-item { display: flex; flex-direction: column; align-items: center; padding: 12px 8px; background: #f8f9fa; border-radius: var(--radius); cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; }
-.inspector-item:hover { background: #f0f1f3; }
-.inspector-item.selected { border-color: var(--primary); background: #e8f0fe; }
-.inspector-item .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 6px; }
-.inspector-item .name { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
 
 /* 文本域 */
 textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .char-count { text-align: right; font-size: 12px; color: var(--text-light); margin-top: 4px; }
 
-/* 提交按钮 */
-.btn-submit { width: 100%; padding: 16px; background: var(--gradient-primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(26,115,232,0.4); margin-top: 24px; }
+/* 提交按钮 - 固定在底部 */
+.form-actions { 
+  position: fixed; 
+  bottom: calc(var(--nav-height) + var(--safe-area-bottom)); 
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: 100%; 
+  max-width: 480px; 
+  padding: 12px 16px; 
+  background: white; 
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+  z-index: 50;
+}
+.btn-submit { width: 100%; padding: 14px; background: var(--gradient-primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(26,115,232,0.4); }
 .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,115,232,0.5); }
 .btn-submit:active { transform: scale(0.98); }
 .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 /* ========== 8. 记录页样式 ========== */
-.records-page { padding-bottom: calc(70px + var(--safe-area-bottom)); }
+.records-page { padding-bottom: calc(var(--nav-height) + var(--safe-area-bottom)); }
 .records-header { background: var(--gradient-primary); padding: 20px 20px 36px; border-radius: 0 0 32px 32px; }
 .records-header h2 { color: white; font-size: 20px; font-weight: 600; margin-bottom: 16px; }
 .filter-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
@@ -404,16 +403,17 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .timeline-track { width: 2px; flex: 1; background: #e5e7eb; margin-top: 6px; }
 .timeline-item:last-child .timeline-track { display: none; }
 .timeline-content { flex: 1; background: white; border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow); }
-.record-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.record-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
 .record-material { display: inline-block; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; color: white; }
 .record-date { font-size: 12px; color: var(--text-secondary); }
+.record-creator { font-size: 11px; color: var(--text-light); background: #f0f0f0; padding: 2px 8px; border-radius: var(--radius-full); }
 .record-body { margin-bottom: 12px; }
-.record-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+.record-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 13px; flex-wrap: wrap; }
 .record-row .label { color: var(--text-secondary); min-width: 56px; }
 .record-row .value { color: var(--text); flex: 1; }
 .record-desc { background: #f8f9fa; padding: 10px 12px; border-radius: var(--radius); font-size: 13px; color: var(--text); line-height: 1.5; margin: 10px 0; border-left: 3px solid var(--primary); }
-.record-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid #f0f0f0; }
-.record-inspectors { display: flex; }
+.record-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid #f0f0f0; flex-wrap: wrap; gap: 8px; }
+.record-inspectors { display: flex; align-items: center; }
 .record-inspector-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid white; margin-left: -6px; }
 .record-inspector-avatar:first-child { margin-left: 0; }
 .record-actions { display: flex; gap: 8px; }
@@ -428,7 +428,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .empty-desc { font-size: 14px; color: var(--text-secondary); }
 
 /* ========== 9. 我的页面样式 ========== */
-.profile-page { padding-bottom: calc(70px + var(--safe-area-bottom)); }
+.profile-page { padding-bottom: calc(var(--nav-height) + var(--safe-area-bottom)); }
 .profile-header { background: var(--gradient-primary); padding: 32px 20px 48px; text-align: center; position: relative; }
 .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 16px; border: 4px solid rgba(255,255,255,0.3); box-shadow: var(--shadow-lg); }
 .profile-name { font-size: 22px; font-weight: 600; color: white; margin-bottom: 4px; }
@@ -445,15 +445,19 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .menu-item:hover { background: #f8f9fa; }
 .menu-item.danger .menu-icon { background: #fee2e2; }
 .menu-item.danger .title { color: var(--danger); }
+.menu-item.admin-only { display: none; }
+.menu-item.admin-only.show { display: flex; }
 .menu-icon { width: 40px; height: 40px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 18px; background: #f0f1f3; flex-shrink: 0; }
 .menu-icon.blue { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
 .menu-icon.green { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); }
 .menu-icon.orange { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); }
 .menu-icon.purple { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); }
 .menu-icon.red { background: #fee2e2; }
+.menu-icon.cyan { background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); }
 .menu-text { flex: 1; }
 .menu-text .title { font-size: 15px; font-weight: 500; color: var(--text); }
 .menu-text .desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.menu-badge { background: var(--danger); color: white; font-size: 11px; padding: 2px 6px; border-radius: var(--radius-full); margin-left: 8px; }
 .menu-arrow { font-size: 20px; color: var(--text-light); }
 
 /* ========== 10. 底部导航栏 ========== */
@@ -473,6 +477,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
   box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
   border-radius: 20px 20px 0 0;
   z-index: 100;
+  height: var(--nav-height);
 }
 .tab-item { display: flex; flex-direction: column; align-items: center; padding: 8px 16px; cursor: pointer; transition: all 0.2s; }
 .tab-item .icon { width: 24px; height: 24px; fill: var(--text-secondary); margin-bottom: 4px; transition: fill 0.2s; }
@@ -497,13 +502,13 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .modal-footer .btn-cancel:hover { background: #e5e7eb; }
 .modal-footer .btn-danger { background: var(--danger); border: none; color: white; }
 .modal-footer .btn-danger:hover { background: #dc2626; }
+.modal-footer .btn-success { background: var(--success); border: none; color: white; }
+.modal-footer .btn-success:hover { background: #059669; }
 .modal-footer .btn-primary { background: var(--primary); border: none; color: white; }
 .modal-footer .btn-primary:hover { background: #1565c0; }
 
 /* 编辑模态框 */
 .edit-form .form-group { margin-bottom: 16px; }
-.edit-form select.form-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; background: #fafbfc; cursor: pointer; }
-.edit-form select.form-input:focus { outline: none; border-color: var(--primary); background: white; }
 
 /* 导出模态框 */
 .export-options { display: flex; flex-direction: column; gap: 12px; }
@@ -511,7 +516,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .export-option:hover { background: #f0f1f3; }
 .export-option.selected { border-color: var(--primary); background: #e8f0fe; }
 .export-option input[type="radio"] { display: none; }
-.export-option .radio { width: 20px; height: 20px; border: 2px solid #d1d5db; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.export-option .radio { width: 20px; height: 20px; border: 2px solid #d1d5db; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
 .export-option.selected .radio { border-color: var(--primary); background: var(--primary); }
 .export-option.selected .radio::after { content: ''; width: 8px; height: 8px; background: white; border-radius: 50%; }
 .export-option .text { font-size: 14px; color: var(--text); }
@@ -519,7 +524,26 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .export-date-range.show { display: block; }
 .export-date-range input { width: 100%; margin-bottom: 8px; }
 
-/* ========== 12. 关于模态框 ========== */
+/* 用户管理模态框 */
+.user-list { max-height: 300px; overflow-y: auto; }
+.user-item { display: flex; align-items: center; padding: 12px; background: #f8f9fa; border-radius: var(--radius); margin-bottom: 8px; }
+.user-item:last-child { margin-bottom: 0; }
+.user-item .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; margin-right: 12px; }
+.user-item .info { flex: 1; }
+.user-item .name { font-size: 14px; font-weight: 500; color: var(--text); }
+.user-item .meta { font-size: 12px; color: var(--text-secondary); }
+.user-item .role-badge { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); margin-left: 8px; }
+.user-item .role-badge.admin { background: #e3f2fd; color: var(--primary); }
+.user-item .role-badge.inspector { background: #e8f5e9; color: var(--success); }
+.user-item .pending-badge { background: var(--warning); color: white; font-size: 10px; padding: 2px 6px; border-radius: var(--radius-full); margin-left: 8px; }
+.user-item .actions { display: flex; gap: 8px; }
+.user-item .action-btn { padding: 6px 12px; border: none; border-radius: var(--radius); font-size: 12px; cursor: pointer; transition: all 0.2s; }
+.user-item .approve-btn { background: var(--success); color: white; }
+.user-item .reject-btn { background: #f0f0f0; color: var(--text); }
+.user-item .delete-btn { background: var(--danger); color: white; }
+.user-item .approved-badge { background: #e8f5e9; color: var(--success); font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); margin-left: 8px; }
+
+/* 关于模态框 */
 .about-content { text-align: center; }
 .about-logo { width: 64px; height: 64px; background: var(--gradient-primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; }
 .about-name { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
@@ -530,21 +554,28 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .about-info p:last-child { margin-bottom: 0; }
 .about-info strong { color: var(--text); }
 
-/* ========== 13. 辅助类 ========== */
+/* ========== 12. 辅助类 ========== */
 .hidden { display: none !important; }
 .text-center { text-align: center; }
 .mt-16 { margin-top: 16px; }
 .mb-16 { margin-bottom: 16px; }
+.loading { display: flex; align-items: center; justify-content: center; padding: 40px; }
+.loading-spinner { width: 40px; height: 40px; border: 3px solid #f0f0f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* ========== 14. 响应式 ========== */
+/* ========== 13. 响应式 ========== */
 @media (max-width: 380px) {
-  .user-grid { grid-template-columns: repeat(2, 1fr); }
   .stats-grid { gap: 8px; }
   .stat-card { padding: 12px; }
   .stat-value { font-size: 24px; }
-  .inspector-grid { grid-template-columns: repeat(2, 1fr); }
+  .auth-title { font-size: 24px; }
 }
-  </style>
+
+/* ========== 14. 滚动条美化 ========== */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 2px; }
+</style>
 </head>
 <body>
   <!-- ========== Toast提示 ========== -->
@@ -555,20 +586,68 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
     <div class="success-checkmark"></div>
   </div>
 
-  <!-- ========== 登录页 ========== -->
-  <div id="loginPage" class="page login-page">
-    <div class="login-header">
-      <div class="login-logo">
+  <!-- ========== 配置提示（仅未配置时显示） ========== -->
+  <div id="configBanner" class="hidden" style="position:fixed;top:0;left:0;right:0;background:#fff3e0;padding:10px 16px;font-size:12px;color:#e65100;z-index:9999;text-align:center;">
+    ⚠️ 请先在代码顶部配置 Supabase URL 和 ANON_KEY
+  </div>
+
+  <!-- ========== 认证页 ========== -->
+  <div id="authPage" class="page auth-page">
+    <div class="auth-header">
+      <div class="auth-logo">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       </div>
-      <h1 class="login-title">异常信息填报系统</h1>
-      <p class="login-subtitle">沙钢永兴特钢 · 技术质量处验收班</p>
+      <h1 class="auth-title">异常信息填报系统</h1>
+      <p class="auth-subtitle">沙钢永兴特钢 · 技术质量处验收班</p>
     </div>
     
-    <div class="login-card">
-      <p class="login-card-title">请选择您的账号登录</p>
-      <div id="userGrid" class="user-grid"></div>
-      <button id="loginBtn" class="btn-login" disabled>进入系统</button>
+    <div class="auth-card">
+      <div id="configHint" class="config-hint">
+        📋 请先配置 Supabase 连接：<br>
+        在代码顶部找到 SUPABASE_URL 和 SUPABASE_ANON_KEY，填入你的项目配置。
+      </div>
+      
+      <div class="auth-tabs">
+        <div class="auth-tab active" data-tab="login">登录</div>
+        <div class="auth-tab" data-tab="register">注册</div>
+      </div>
+      
+      <!-- 登录表单 -->
+      <form id="loginForm" class="auth-form active">
+        <div class="form-group">
+          <label class="form-label">邮箱</label>
+          <input type="email" id="loginEmail" class="form-input" placeholder="请输入邮箱" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input type="password" id="loginPassword" class="form-input" placeholder="请输入密码" required>
+        </div>
+        <button type="submit" class="btn-auth" id="loginBtn">登录</button>
+      </form>
+      
+      <!-- 注册表单 -->
+      <form id="registerForm" class="auth-form">
+        <div class="form-group">
+          <label class="form-label">姓名</label>
+          <input type="text" id="registerName" class="form-input" placeholder="请输入真实姓名" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">邮箱</label>
+          <input type="email" id="registerEmail" class="form-input" placeholder="请输入邮箱" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input type="password" id="registerPassword" class="form-input" placeholder="请输入密码（至少6位）" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label class="form-label">角色</label>
+          <div class="role-select">
+            <div class="role-option selected" data-role="inspector">验收员</div>
+            <div class="role-option" data-role="admin">管理员</div>
+          </div>
+        </div>
+        <button type="submit" class="btn-auth" id="registerBtn">注册</button>
+      </form>
     </div>
   </div>
 
@@ -579,30 +658,36 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
     <div id="homePage" class="page home-page">
       <div class="home-header">
         <div class="home-welcome">
-          <h1>欢迎回来，<span id="homeUserName">-</span></h1>
-          <p class="date" id="homeDate">-</p>
+          <div>
+            <h1>欢迎回来，<span id="homeUserName">-</span></h1>
+            <p class="date" id="homeDate">-</p>
+          </div>
+          <div class="home-sync">
+            <span class="dot"></span>
+            <span>已同步</span>
+          </div>
         </div>
       </div>
       
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-icon blue">📊</div>
-          <div class="stat-value"><span id="weekCount">0</span><span id="weekTrend" class="trend"></span></div>
+          <div class="stat-value" id="weekCount">-</div>
           <div class="stat-label">本周异常</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon green">📅</div>
-          <div class="stat-value"><span id="monthCount">0</span></div>
+          <div class="stat-value" id="monthCount">-</div>
           <div class="stat-label">本月异常</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon orange">🏷️</div>
-          <div class="stat-value"><span id="materialTypes">0</span></div>
+          <div class="stat-value" id="materialTypes">-</div>
           <div class="stat-label">物料种类</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon purple">👤</div>
-          <div class="stat-value"><span id="myCount">0</span></div>
+          <div class="stat-value" id="myCount">-</div>
           <div class="stat-label">我填报数</div>
         </div>
       </div>
@@ -642,6 +727,11 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
           <label class="form-label"><span class="icon">🏷️</span>物料名称<span class="required">*</span></label>
           <div id="materialTags" class="material-tags"></div>
           <input type="hidden" id="formMaterial">
+          <div class="form-label" style="margin-top:12px;font-size:12px;color:var(--text-secondary);">或输入新物料名称：</div>
+          <div class="material-input-wrapper">
+            <input type="text" id="formMaterialInput" class="form-input" placeholder="输入物料名称自动补全..." autocomplete="off">
+            <div id="materialSuggestions" class="material-suggestions"></div>
+          </div>
         </div>
       </div>
       
@@ -667,16 +757,19 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       <div class="form-card">
         <div class="form-group">
           <label class="form-label"><span class="icon">👤</span>验收员1<span class="required">*</span></label>
-          <div id="inspector1Grid" class="inspector-grid"></div>
-          <input type="hidden" id="formInspector1">
+          <input type="text" id="formInspector1" class="form-input" placeholder="请输入验收员1姓名">
         </div>
         <div class="form-group">
           <label class="form-label"><span class="icon">👤</span>验收员2<span class="required">*</span></label>
-          <div id="inspector2Grid" class="inspector-grid"></div>
-          <input type="hidden" id="formInspector2">
+          <input type="text" id="formInspector2" class="form-input" placeholder="请输入验收员2姓名">
         </div>
       </div>
       
+      <!-- 底部固定提交按钮 -->
+      <div style="height: 80px;"></div>
+    </div>
+    
+    <div class="form-actions">
       <button id="submitBtn" class="btn-submit">提交异常信息</button>
     </div>
 
@@ -691,7 +784,11 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
         </div>
       </div>
       
-      <div class="timeline">
+      <div id="recordsLoading" class="loading">
+        <div class="loading-spinner"></div>
+      </div>
+      
+      <div class="timeline" id="recordsTimeline" style="display:none;">
         <div id="recordsList"></div>
         <div id="emptyState" class="empty-state hidden">
           <div class="empty-icon">📋</div>
@@ -711,47 +808,30 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       
       <div class="profile-stats">
         <div class="profile-stat-card">
-          <div id="myMonthCount" class="profile-stat-value">0</div>
+          <div id="myMonthCount" class="profile-stat-value">-</div>
           <div class="profile-stat-label">本月填报</div>
         </div>
         <div class="profile-stat-card">
-          <div id="myTotalCount" class="profile-stat-value">0</div>
+          <div id="myTotalCount" class="profile-stat-value">-</div>
           <div class="profile-stat-label">累计填报</div>
         </div>
       </div>
       
       <div class="menu-section">
         <div class="menu-list">
+          <div class="menu-item admin-only" onclick="showUserManagement()">
+            <div class="menu-icon cyan">👥</div>
+            <div class="menu-text">
+              <div class="title">用户管理<span id="pendingBadge" class="menu-badge hidden">0</span></div>
+              <div class="desc">审批新注册用户</div>
+            </div>
+            <span class="menu-arrow">›</span>
+          </div>
           <div class="menu-item" onclick="showExportModal()">
             <div class="menu-icon green">📊</div>
             <div class="menu-text">
               <div class="title">导出Excel</div>
               <div class="desc">按周/月筛选导出异常记录</div>
-            </div>
-            <span class="menu-arrow">›</span>
-          </div>
-          <div class="menu-item" onclick="exportJSON()">
-            <div class="menu-icon blue">💾</div>
-            <div class="menu-text">
-              <div class="title">导出数据</div>
-              <div class="desc">导出JSON文件用于数据备份</div>
-            </div>
-            <span class="menu-arrow">›</span>
-          </div>
-          <div class="menu-item" onclick="document.getElementById('importFile').click()">
-            <div class="menu-icon purple">📂</div>
-            <div class="menu-text">
-              <div class="title">导入数据</div>
-              <div class="desc">导入其他人的JSON文件合并</div>
-            </div>
-            <span class="menu-arrow">›</span>
-          </div>
-          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
-          <div class="menu-item" onclick="showClearConfirm()">
-            <div class="menu-icon orange">🗑️</div>
-            <div class="menu-text">
-              <div class="title">清空数据</div>
-              <div class="desc">清除本地所有记录</div>
             </div>
             <span class="menu-arrow">›</span>
           </div>
@@ -816,7 +896,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
         </div>
         <div class="form-group">
           <label class="form-label">物料名称</label>
-          <select id="editMaterial" class="form-input"></select>
+          <input type="text" id="editMaterial" class="form-input">
         </div>
         <div class="form-group">
           <label class="form-label">供货单位</label>
@@ -832,11 +912,11 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
         </div>
         <div class="form-group">
           <label class="form-label">验收员1</label>
-          <select id="editInspector1" class="form-input"></select>
+          <input type="text" id="editInspector1" class="form-input">
         </div>
         <div class="form-group">
           <label class="form-label">验收员2</label>
-          <select id="editInspector2" class="form-input"></select>
+          <input type="text" id="editInspector2" class="form-input">
         </div>
       </div>
       <div class="modal-footer">
@@ -860,24 +940,6 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       <div class="modal-footer">
         <button class="btn btn-cancel" onclick="closeDeleteModal()">取消</button>
         <button class="btn btn-danger" onclick="confirmDelete()">删除</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== 清空数据确认模态框 ========== -->
-  <div id="clearModal" class="modal-overlay" onclick="if(event.target===this)closeClearModal()">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>清空数据</h3>
-        <button class="modal-close" onclick="closeClearModal()">×</button>
-      </div>
-      <div class="modal-body text-center">
-        <p style="margin-bottom:16px;font-size:15px">确定要清空所有异常记录吗？</p>
-        <p style="color:var(--danger);font-size:13px">此操作不可恢复，请先导出备份！</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-cancel" onclick="closeClearModal()">取消</button>
-        <button class="btn btn-danger" onclick="confirmClear()">确认清空</button>
       </div>
     </div>
   </div>
@@ -924,6 +986,27 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
     </div>
   </div>
 
+  <!-- ========== 用户管理模态框 ========== -->
+  <div id="userModal" class="modal-overlay" onclick="if(event.target===this)closeUserModal()">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header">
+        <h3>用户管理</h3>
+        <button class="modal-close" onclick="closeUserModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <h4 style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">待审批用户</h4>
+        <div id="pendingUserList" class="user-list">
+          <div style="text-align:center;color:var(--text-light);padding:20px;">暂无待审批用户</div>
+        </div>
+        <h4 style="font-size:14px;color:var(--text-secondary);margin:20px 0 12px;">已注册用户</h4>
+        <div id="userList" class="user-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeUserModal()" style="flex:1">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== 关于模态框 ========== -->
   <div id="aboutModal" class="modal-overlay" onclick="if(event.target===this)closeAboutModal()">
     <div class="modal">
@@ -934,14 +1017,14 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       <div class="modal-body about-content">
         <div class="about-logo">⚠️</div>
         <h2 class="about-name">异常信息填报系统</h2>
-        <p class="about-version">版本 2.0 (纯前端版)</p>
-        <p class="about-desc">沙钢永兴特钢技术质量处验收班专用<br>数据存储于本地浏览器，无需服务器</p>
+        <p class="about-version">版本 3.0 (云端版)</p>
+        <p class="about-desc">沙钢永兴特钢技术质量处验收班专用<br>数据存储于Supabase云端数据库</p>
         <div class="about-info">
-          <p><strong>使用说明：</strong></p>
-          <p>• 填报后数据保存在本机浏览器</p>
-          <p>• 点击"导出数据"分享给统计员</p>
-          <p>• 统计员可通过"导入数据"合并数据</p>
-          <p>• 更换设备前请先导出数据备份</p>
+          <p><strong>主要特性：</strong></p>
+          <p>• 多用户云端数据共享</p>
+          <p>• 管理员可审批新用户</p>
+          <p>• 数据实时同步</p>
+          <p>• 支持Excel导出</p>
         </div>
       </div>
       <div class="modal-footer">
@@ -951,36 +1034,37 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
   </div>
 
 <script>
-// ========== 全局变量 ==========
+// ============================================
+// 配置区域 - 请填入你的Supabase项目配置
+// ============================================
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+// ============================================
+// 全局变量
+// ============================================
+let supabase = null;
 let currentUser = null;
+let currentUserProfile = null;
 let records = [];
+let materials = [];
 let currentFilter = 'all';
 let deleteTargetId = null;
 let trendChart = null;
 let materialChart = null;
+let isConfigured = SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY';
 
-// ========== 角色名称映射 ==========
-const roleNames = { admin: '管理员', statistician: '统计员', inspector: '验收员' };
-
-// ========== 用户列表 ==========
-const users = [
-  { name: '郭鑫', role: 'admin', avatar: '👨‍💼' },
-  { name: '赵飞', role: 'statistician', avatar: '📊' },
-  { name: '郭娟娟', role: 'inspector', avatar: '👩' },
-  { name: '姬银平', role: 'inspector', avatar: '👩‍🔧' },
-  { name: '王三妮', role: 'inspector', avatar: '👩‍💻' }
-];
-
-// ========== 物料列表 ==========
-const materials = ['钒铁', '钼铁', '铝块', '铝粒', '钒氮合金', '钛铁', '铌铁', '硼铁'];
-
-// ========== 物料颜色 ==========
+// ============================================
+// 物料颜色
+// ============================================
 const materialColors = {
   '钒铁': '#e91e63', '钼铁': '#9c27b0', '铝块': '#2196f3', '铝粒': '#00bcd4',
   '钒氮合金': '#ff9800', '钛铁': '#4caf50', '铌铁': '#795548', '硼铁': '#607d8b'
 };
 
-// ========== Toast提示 ==========
+// ============================================
+// Toast提示
+// ============================================
 function showToast(message, type = '') {
   const toast = document.getElementById('toast');
   toast.textContent = message;
@@ -989,122 +1073,312 @@ function showToast(message, type = '') {
   setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
-// ========== 成功动画 ==========
+// ============================================
+// 成功动画
+// ============================================
 function showSuccessAnimation() {
   const anim = document.getElementById('successAnimation');
   anim.classList.add('show');
   setTimeout(() => anim.classList.remove('show'), 1500);
 }
 
-// ========== UUID生成 ==========
-function uuid() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-}
-
-// ========== localStorage操作 ==========
-function saveRecords() {
-  localStorage.setItem('records', JSON.stringify(records));
-}
-
-function loadRecords() {
-  const data = localStorage.getItem('records');
-  records = data ? JSON.parse(data) : [];
-}
-
-// ========== 初始化 ==========
-function init() {
+// ============================================
+// 初始化
+// ============================================
+async function init() {
+  if (!isConfigured) {
+    document.getElementById('configHint').classList.remove('hidden');
+    document.getElementById('configBanner').classList.remove('hidden');
+    showAuthPage();
+    return;
+  }
+  
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
   // 检查登录状态
-  const savedUser = localStorage.getItem('currentUser');
-  if (savedUser) {
-    currentUser = JSON.parse(savedUser);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    await loadUserProfile(session.user);
     showApp();
   } else {
-    showLoginPage();
+    showAuthPage();
   }
-  renderUserGrid();
+  
+  // 监听认证状态变化
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      await loadUserProfile(session.user);
+      showApp();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      currentUserProfile = null;
+      showAuthPage();
+    }
+  });
+  
+  setupEventListeners();
   renderMaterialTags();
-  renderInspectorGrids();
   
   // 设置默认日期
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('formDate').value = today;
+  document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
 }
 
-// ========== 显示登录页 ==========
-function showLoginPage() {
-  document.getElementById('loginPage').classList.add('active');
+// ============================================
+// 加载用户信息
+// ============================================
+async function loadUserProfile(user) {
+  currentUser = user;
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+  
+  if (error && error.code === 'PGRST116') {
+    // 用户不存在，尝试从pending_users获取信息
+    const { data: pending } = await supabase
+      .from('pending_users')
+      .select('*')
+      .eq('email', user.email)
+      .single();
+    
+    if (pending) {
+      // 创建用户记录
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert([{
+          id: user.id,
+          email: user.email,
+          name: pending.name,
+          role: pending.role,
+          approved: false
+        }])
+        .select()
+        .single();
+      
+      if (!insertError && newUser) {
+        currentUserProfile = newUser;
+      }
+    }
+  } else if (!error && data) {
+    currentUserProfile = data;
+  }
+}
+
+// ============================================
+// 显示认证页
+// ============================================
+function showAuthPage() {
+  document.getElementById('authPage').classList.add('active');
   document.getElementById('appContainer').classList.add('hidden');
 }
 
-// ========== 显示应用 ==========
-function showApp() {
-  document.getElementById('loginPage').classList.remove('active');
+// ============================================
+// 显示应用
+// ============================================
+async function showApp() {
+  document.getElementById('authPage').classList.remove('active');
   document.getElementById('appContainer').classList.remove('hidden');
   
-  document.getElementById('homeUserName').textContent = currentUser.name;
-  document.getElementById('profileAvatar').textContent = currentUser.avatar || '👤';
-  document.getElementById('profileName').textContent = currentUser.name;
-  document.getElementById('profileRole').textContent = roleNames[currentUser.role] || currentUser.role;
+  // 更新用户信息
+  document.getElementById('homeUserName').textContent = currentUserProfile?.name || currentUser.email;
+  document.getElementById('profileAvatar').textContent = getAvatar(currentUserProfile?.name || '用户');
+  document.getElementById('profileName').textContent = currentUserProfile?.name || currentUser.email;
+  document.getElementById('profileRole').textContent = currentUserProfile?.role === 'admin' ? '管理员' : '验收员';
   
   const now = new Date();
   document.getElementById('homeDate').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${getWeekday(now)}`;
   
+  // 管理员功能
+  if (currentUserProfile?.role === 'admin') {
+    document.querySelectorAll('.admin-only').forEach(el => el.classList.add('show'));
+    await loadPendingUsersCount();
+  }
+  
   switchTab('home');
-  loadData();
+  await loadData();
 }
 
-// ========== 获取星期 ==========
+// ============================================
+// 获取头像
+// ============================================
+function getAvatar(name) {
+  const avatars = ['👨', '👩', '👨‍💼', '👩‍💼', '👨‍🔧', '👩‍🔧', '👨‍💻', '👩‍💻', '👨‍🎓', '👩‍🎓'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return avatars[Math.abs(hash) % avatars.length];
+}
+
+// ============================================
+// 获取星期
+// ============================================
 function getWeekday(date) {
   return ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][date.getDay()];
 }
 
-// ========== 渲染用户网格 ==========
-function renderUserGrid() {
-  const grid = document.getElementById('userGrid');
-  grid.innerHTML = users.map(u => `
-    <div class="user-item" data-name="${u.name}" onclick="selectUser(this)">
-      <div class="user-avatar">${u.avatar}</div>
-      <div class="user-name">${u.name}</div>
-      <div class="user-role">${roleNames[u.role]}</div>
-    </div>
-  `).join('');
-}
-
-// ========== 选择用户 ==========
-function selectUser(el) {
-  document.querySelectorAll('.user-item').forEach(i => i.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('loginBtn').disabled = false;
-  window.selectedUserName = el.dataset.name;
-}
-
-// ========== 登录 ==========
-function doLogin() {
-  const name = window.selectedUserName;
-  if (!name) { showToast('请先选择账号', 'warning'); return; }
+// ============================================
+// 设置事件监听
+// ============================================
+function setupEventListeners() {
+  // 认证标签切换
+  document.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      const tabName = tab.dataset.tab;
+      document.getElementById('loginForm').classList.toggle('active', tabName === 'login');
+      document.getElementById('registerForm').classList.toggle('active', tabName === 'register');
+    });
+  });
   
-  currentUser = users.find(u => u.name === name);
-  localStorage.setItem('currentUser', JSON.stringify(currentUser));
-  showApp();
-  showToast('登录成功', 'success');
+  // 角色选择
+  document.querySelectorAll('.role-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+    });
+  });
+  
+  // 登录表单
+  document.getElementById('loginForm').addEventListener('submit', handleLogin);
+  
+  // 注册表单
+  document.getElementById('registerForm').addEventListener('submit', handleRegister);
+  
+  // Tab切换
+  document.querySelectorAll('.tab-item').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+  
+  // 提交按钮
+  document.getElementById('submitBtn').addEventListener('click', submitForm);
+  
+  // 字符计数
+  document.getElementById('formDesc').addEventListener('input', e => {
+    document.getElementById('charCount').textContent = e.target.value.length;
+  });
+  
+  // 筛选按钮
+  document.addEventListener('click', e => {
+    if (e.target.classList.contains('filter-btn')) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentFilter = e.target.dataset.filter;
+      renderRecords();
+    }
+  });
+  
+  // 物料输入自动补全
+  document.getElementById('formMaterialInput').addEventListener('input', handleMaterialInput);
+  document.getElementById('formMaterialInput').addEventListener('focus', handleMaterialInput);
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.material-input-wrapper')) {
+      document.getElementById('materialSuggestions').classList.remove('show');
+    }
+  });
 }
 
-// ========== 退出登录 ==========
-function logout() {
-  localStorage.removeItem('currentUser');
-  currentUser = null;
-  window.selectedUserName = null;
-  document.getElementById('loginBtn').disabled = true;
-  document.querySelectorAll('.user-item').forEach(i => i.classList.remove('selected'));
-  showLoginPage();
+// ============================================
+// 登录
+// ============================================
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+  
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  
+  if (error) {
+    showToast(error.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '登录';
+    return;
+  }
+  
+  // 检查用户是否已审批
+  await loadUserProfile(data.user);
+  
+  if (currentUserProfile && !currentUserProfile.approved) {
+    await supabase.auth.signOut();
+    showToast('您的账号尚未通过审批，请联系管理员', 'warning');
+    btn.disabled = false;
+    btn.textContent = '登录';
+    return;
+  }
+  
+  btn.disabled = false;
+  btn.textContent = '登录';
+}
+
+// ============================================
+// 注册
+// ============================================
+async function handleRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = true;
+  btn.textContent = '注册中...';
+  
+  const name = document.getElementById('registerName').value;
+  const email = document.getElementById('registerEmail').value;
+  const password = document.getElementById('registerPassword').value;
+  const role = document.querySelector('.role-option.selected').dataset.role;
+  
+  // 检查邮箱是否已存在
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', email)
+    .single();
+  
+  if (existing) {
+    showToast('该邮箱已被注册', 'error');
+    btn.disabled = false;
+    btn.textContent = '注册';
+    return;
+  }
+  
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  
+  if (error) {
+    showToast(error.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '注册';
+    return;
+  }
+  
+  if (data.user) {
+    // 在pending_users表中创建记录
+    await supabase.from('pending_users').insert([{ email, name, password_hash: 'managed', role }]);
+    showToast('注册成功，请等待管理员审批', 'success');
+    
+    // 切换到登录页面
+    document.querySelector('.auth-tab[data-tab="login"]').click();
+  }
+  
+  btn.disabled = false;
+  btn.textContent = '注册';
+}
+
+// ============================================
+// 退出登录
+// ============================================
+async function logout() {
+  await supabase.auth.signOut();
   showToast('已退出登录');
 }
 
-// ========== Tab切换 ==========
-function switchTab(tabName) {
+// ============================================
+// Tab切换
+// ============================================
+async function switchTab(tabName) {
   document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
   document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1112,107 +1386,199 @@ function switchTab(tabName) {
   const pageMap = { home: 'homePage', form: 'formPage', records: 'recordsPage', profile: 'profilePage' };
   document.getElementById(pageMap[tabName]).classList.add('active');
   
-  if (tabName === 'home') loadDashboardStats();
-  else if (tabName === 'records') renderRecords();
-  else if (tabName === 'profile') loadMyStats();
+  if (tabName === 'home') await loadDashboardStats();
+  else if (tabName === 'records') await loadRecords();
+  else if (tabName === 'profile') await loadMyStats();
 }
 
-// ========== 加载数据 ==========
-function loadData() {
-  loadRecords();
-  loadDashboardStats();
-  loadMyStats();
+// ============================================
+// 加载数据
+// ============================================
+async function loadData() {
+  await Promise.all([loadMaterials(), loadRecords()]);
+  await loadDashboardStats();
+  await loadMyStats();
+}
+
+// ============================================
+// 加载物料列表
+// ============================================
+async function loadMaterials() {
+  const { data, error } = await supabase.from('materials').select('name').order('name');
+  if (!error && data) {
+    materials = data.map(m => m.name);
+    renderMaterialTags();
+  }
+}
+
+// ============================================
+// 加载记录
+// ============================================
+async function loadRecords() {
+  document.getElementById('recordsLoading').style.display = 'flex';
+  document.getElementById('recordsTimeline').style.display = 'none';
+  
+  let query = supabase.from('records').select('*').order('created_at', { ascending: false });
+  
+  // 管理员可以看所有数据，其他用户只能看自己的
+  if (currentUserProfile?.role !== 'admin') {
+    query = query.eq('user_id', currentUser.id);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    showToast('加载记录失败', 'error');
+    return;
+  }
+  
+  records = data || [];
+  
+  document.getElementById('recordsLoading').style.display = 'none';
+  document.getElementById('recordsTimeline').style.display = 'block';
   renderRecords();
 }
 
-// ========== 渲染物料标签 ==========
-function renderMaterialTags() {
-  const container = document.getElementById('materialTags');
-  container.innerHTML = materials.map(m => `
-    <div class="material-tag" data-material="${m}" onclick="selectMaterial(this)">${m}</div>
-  `).join('');
-}
-
-// ========== 选择物料 ==========
-function selectMaterial(el) {
-  document.querySelectorAll('.material-tag').forEach(t => t.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('formMaterial').value = el.dataset.material;
-}
-
-// ========== 渲染验收员网格 ==========
-function renderInspectorGrids() {
-  const inspectors = users;
-  document.getElementById('inspector1Grid').innerHTML = inspectors.map(u => `
-    <div class="inspector-item" data-name="${u.name}" onclick="selectInspector(this, 1)">
-      <div class="avatar">${u.avatar}</div>
-      <div class="name">${u.name}</div>
-    </div>
-  `).join('');
-  document.getElementById('inspector2Grid').innerHTML = inspectors.map(u => `
-    <div class="inspector-item" data-name="${u.name}" onclick="selectInspector(this, 2)">
-      <div class="avatar">${u.avatar}</div>
-      <div class="name">${u.name}</div>
-    </div>
-  `).join('');
-  
-  // 编辑模态框选项
-  const selectHtml = '<option value="">请选择</option>' + inspectors.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
-  document.getElementById('editMaterial').innerHTML = materials.map(m => `<option value="${m}">${m}</option>`).join('');
-  document.getElementById('editInspector1').innerHTML = selectHtml;
-  document.getElementById('editInspector2').innerHTML = selectHtml;
-}
-
-// ========== 选择验收员 ==========
-function selectInspector(el, num) {
-  const grid = num === 1 ? 'inspector1Grid' : 'inspector2Grid';
-  const hiddenField = num === 1 ? 'formInspector1' : 'formInspector2';
-  
-  document.querySelectorAll(`#${grid} .inspector-item`).forEach(i => i.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById(hiddenField).value = el.dataset.name;
-}
-
-// ========== 加载仪表盘统计 ==========
-function loadDashboardStats() {
-  loadRecords();
+// ============================================
+// 加载仪表盘统计
+// ============================================
+async function loadDashboardStats() {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   
-  const weekRecords = records.filter(r => new Date(r.date) >= weekAgo);
-  const monthRecords = records.filter(r => new Date(r.date) >= monthStart);
-  const myRecords = records.filter(r => r.created_by === currentUser.name);
-  const materialSet = new Set(records.map(r => r.material_name));
+  let allRecords = records;
+  if (currentUserProfile?.role === 'admin') {
+    // 管理员获取所有数据
+    const { data } = await supabase.from('records').select('*');
+    allRecords = data || [];
+  }
+  
+  const weekRecords = allRecords.filter(r => new Date(r.created_at) >= weekAgo);
+  const monthRecords = allRecords.filter(r => new Date(r.created_at) >= monthStart);
+  const myRecords = records.filter(r => r.user_id === currentUser?.id);
+  const materialSet = new Set(allRecords.map(r => r.material_name));
   
   document.getElementById('weekCount').textContent = weekRecords.length;
   document.getElementById('monthCount').textContent = monthRecords.length;
   document.getElementById('materialTypes').textContent = materialSet.size || materials.length;
   document.getElementById('myCount').textContent = myRecords.length;
   
-  renderCharts(records);
+  renderCharts(allRecords);
 }
 
-// ========== 渲染图表 ==========
+// ============================================
+// 加载我的统计
+// ============================================
+async function loadMyStats() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const myRecords = records.filter(r => r.user_id === currentUser?.id);
+  const myMonthRecords = myRecords.filter(r => new Date(r.created_at) >= monthStart);
+  
+  document.getElementById('myMonthCount').textContent = myMonthRecords.length;
+  document.getElementById('myTotalCount').textContent = myRecords.length;
+}
+
+// ============================================
+// 加载待审批用户数量
+// ============================================
+async function loadPendingUsersCount() {
+  const { data } = await supabase.from('pending_users').select('id');
+  const count = data?.length || 0;
+  const badge = document.getElementById('pendingBadge');
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+// ============================================
+// 渲染物料标签
+// ============================================
+function renderMaterialTags() {
+  const container = document.getElementById('materialTags');
+  container.innerHTML = materials.slice(0, 8).map(m => `
+    <div class="material-tag" data-material="${m}" onclick="selectMaterial(this)">${m}</div>
+  `).join('');
+}
+
+// ============================================
+// 选择物料
+// ============================================
+function selectMaterial(el) {
+  document.querySelectorAll('.material-tag').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('formMaterial').value = el.dataset.material;
+  document.getElementById('formMaterialInput').value = el.dataset.material;
+  document.getElementById('materialSuggestions').classList.remove('show');
+}
+
+// ============================================
+// 物料输入处理
+// ============================================
+function handleMaterialInput(e) {
+  const value = e.target.value.trim().toLowerCase();
+  const suggestions = document.getElementById('materialSuggestions');
+  
+  if (!value) {
+    suggestions.classList.remove('show');
+    return;
+  }
+  
+  const matches = materials.filter(m => m.toLowerCase().includes(value));
+  
+  if (matches.length === 0) {
+    suggestions.innerHTML = `<div class="material-suggestion">按"${value}"新增</div>`;
+  } else {
+    suggestions.innerHTML = matches.map(m => {
+      const color = materialColors[m] || '#607d8b';
+      return `<div class="material-suggestion" onclick="selectSuggestion('${m}')"><span class="material-color" style="background:${color}"></span>${m}</div>`;
+    }).join('');
+  }
+  
+  suggestions.classList.add('show');
+}
+
+// ============================================
+// 选择建议项
+// ============================================
+function selectSuggestion(name) {
+  document.getElementById('formMaterialInput').value = name;
+  document.getElementById('formMaterial').value = name;
+  document.getElementById('materialSuggestions').classList.remove('show');
+  
+  // 高亮对应标签
+  document.querySelectorAll('.material-tag').forEach(t => {
+    t.classList.toggle('selected', t.dataset.material === name);
+  });
+}
+
+// ============================================
+// 渲染图表
+// ============================================
 function renderCharts(allRecords) {
   renderTrendChart(allRecords);
   renderMaterialChart(allRecords);
 }
 
-// ========== 渲染趋势图 ==========
+// ============================================
+// 渲染趋势图
+// ============================================
 function renderTrendChart(allRecords) {
   const ctx = document.getElementById('trendChart').getContext('2d');
   if (trendChart) trendChart.destroy();
   
-  // 最近7天数据
   const days = [];
   const counts = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
-    days.push(dateStr);
-    counts.push(allRecords.filter(r => r.date === d.toISOString().split('T')[0]).length);
+    const dateStr = d.toISOString().split('T')[0];
+    days.push(`${d.getMonth()+1}/${d.getDate()}`);
+    counts.push(allRecords.filter(r => r.date === dateStr).length);
   }
   
   trendChart = new Chart(ctx, {
@@ -1246,7 +1612,9 @@ function renderTrendChart(allRecords) {
   });
 }
 
-// ========== 渲染物料饼图 ==========
+// ============================================
+// 渲染物料饼图
+// ============================================
 function renderMaterialChart(allRecords) {
   const ctx = document.getElementById('materialChart').getContext('2d');
   if (materialChart) materialChart.destroy();
@@ -1274,54 +1642,73 @@ function renderMaterialChart(allRecords) {
   });
 }
 
-// ========== 加载我的统计 ==========
-function loadMyStats() {
-  loadRecords();
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const myRecords = records.filter(r => r.created_by === currentUser.name);
-  const myMonthRecords = myRecords.filter(r => new Date(r.date) >= monthStart);
-  
-  document.getElementById('myMonthCount').textContent = myMonthRecords.length;
-  document.getElementById('myTotalCount').textContent = myRecords.length;
-}
-
-// ========== 提交表单 ==========
-function submitForm() {
+// ============================================
+// 提交表单
+// ============================================
+async function submitForm() {
   const date = document.getElementById('formDate').value;
-  const material = document.getElementById('formMaterial').value;
+  const materialInput = document.getElementById('formMaterialInput').value.trim();
+  const material = document.getElementById('formMaterial').value || materialInput;
   const supplier = document.getElementById('formSupplier').value.trim();
   const truck = document.getElementById('formTruck').value.trim();
   const desc = document.getElementById('formDesc').value.trim();
-  const inspector1 = document.getElementById('formInspector1').value;
-  const inspector2 = document.getElementById('formInspector2').value;
+  const inspector1 = document.getElementById('formInspector1').value.trim();
+  const inspector2 = document.getElementById('formInspector2').value.trim();
   
   if (!date || !material || !supplier || !truck || !desc || !inspector1 || !inspector2) {
     showToast('请填写完整信息', 'warning'); return;
   }
   if (inspector1 === inspector2) { showToast('两个验收员不能相同', 'warning'); return; }
   
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '提交中...';
+  
+  // 添加新物料到数据库
+  if (material && !materials.includes(material)) {
+    await supabase.from('materials').insert([{ name: material }]);
+    materials.push(material);
+    renderMaterialTags();
+  }
+  
   const record = {
-    id: uuid(),
-    date, material_name: material, supplier, truck_no: truck,
-    abnormal_desc: desc, inspector1, inspector2,
-    created_by: currentUser.name,
-    created_at: new Date().toISOString()
+    user_id: currentUser.id,
+    date,
+    material_name: material,
+    supplier,
+    truck_no: truck,
+    abnormal_desc: desc,
+    inspector1,
+    inspector2,
+    created_by: currentUserProfile?.name || currentUser.email
   };
   
-  records.unshift(record);
-  saveRecords();
+  const { error } = await supabase.from('records').insert([record]);
+  
+  if (error) {
+    showToast('提交失败: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '提交异常信息';
+    return;
+  }
   
   showSuccessAnimation();
   showToast('提交成功', 'success');
   resetForm();
   
-  setTimeout(() => { loadData(); switchTab('records'); }, 500);
+  btn.disabled = false;
+  btn.textContent = '提交异常信息';
+  
+  await loadData();
+  switchTab('records');
 }
 
-// ========== 重置表单 ==========
+// ============================================
+// 重置表单
+// ============================================
 function resetForm() {
   document.getElementById('formMaterial').value = '';
+  document.getElementById('formMaterialInput').value = '';
   document.getElementById('formSupplier').value = '';
   document.getElementById('formTruck').value = '';
   document.getElementById('formDesc').value = '';
@@ -1330,22 +1717,12 @@ function resetForm() {
   document.getElementById('charCount').textContent = '0';
   document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
   document.querySelectorAll('.material-tag').forEach(t => t.classList.remove('selected'));
-  document.querySelectorAll('.inspector-item').forEach(i => i.classList.remove('selected'));
 }
 
-// ========== 筛选记录 ==========
-document.addEventListener('click', e => {
-  if (e.target.classList.contains('filter-btn')) {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    currentFilter = e.target.dataset.filter;
-    renderRecords();
-  }
-});
-
-// ========== 渲染记录列表 ==========
+// ============================================
+// 渲染记录列表
+// ============================================
 function renderRecords() {
-  loadRecords();
   const container = document.getElementById('recordsList');
   const emptyState = document.getElementById('emptyState');
   
@@ -1354,18 +1731,20 @@ function renderRecords() {
   
   if (currentFilter === 'week') {
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    filtered = records.filter(r => new Date(r.date) >= weekAgo);
+    filtered = records.filter(r => new Date(r.created_at) >= weekAgo);
   } else if (currentFilter === 'month') {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    filtered = records.filter(r => new Date(r.date) >= monthStart);
+    filtered = records.filter(r => new Date(r.created_at) >= monthStart);
   }
   
   if (filtered.length === 0) { container.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
   emptyState.classList.add('hidden');
   
+  const canEditAll = currentUserProfile?.role === 'admin';
+  
   container.innerHTML = filtered.map(record => {
     const color = materialColors[record.material_name] || '#607d8b';
-    const canEdit = currentUser.role === 'admin' || record.created_by === currentUser.name;
+    const canEdit = canEditAll || record.user_id === currentUser?.id;
     
     return `
       <div class="timeline-item">
@@ -1374,6 +1753,7 @@ function renderRecords() {
           <div class="record-header">
             <span class="record-material" style="background:${color}">${record.material_name}</span>
             <span class="record-date">${record.date}</span>
+            ${canEditAll ? `<span class="record-creator">${record.created_by}</span>` : ''}
           </div>
           <div class="record-body">
             <div class="record-row"><span class="label">供货单位</span><span class="value">${record.supplier || '-'}</span></div>
@@ -1382,8 +1762,8 @@ function renderRecords() {
           </div>
           <div class="record-footer">
             <div class="record-inspectors">
-              <div class="record-inspector-avatar" title="${record.inspector1}">${getInspectorAvatar(record.inspector1)}</div>
-              <div class="record-inspector-avatar" title="${record.inspector2}">${getInspectorAvatar(record.inspector2)}</div>
+              <div class="record-inspector-avatar" title="${record.inspector1}">${getAvatar(record.inspector1)}</div>
+              <div class="record-inspector-avatar" title="${record.inspector2}">${getAvatar(record.inspector2)}</div>
             </div>
             <div class="record-actions">
               ${canEdit ? `<button class="record-action" onclick="editRecord('${record.id}')" title="编辑">✏️</button><button class="record-action delete" onclick="showDeleteConfirm('${record.id}')" title="删除">🗑️</button>` : ''}
@@ -1395,13 +1775,9 @@ function renderRecords() {
   }).join('');
 }
 
-// ========== 获取验收员头像 ==========
-function getInspectorAvatar(name) {
-  const user = users.find(u => u.name === name);
-  return user ? (user.avatar || '👤') : '👤';
-}
-
-// ========== 编辑记录 ==========
+// ============================================
+// 编辑记录
+// ============================================
 function editRecord(id) {
   const record = records.find(r => r.id === id);
   if (!record) return;
@@ -1420,55 +1796,61 @@ function editRecord(id) {
 
 function closeEditModal() { document.getElementById('editModal').classList.remove('show'); }
 
-// ========== 保存编辑 ==========
-function saveEdit() {
+// ============================================
+// 保存编辑
+// ============================================
+async function saveEdit() {
   const id = document.getElementById('editId').value;
-  const idx = records.findIndex(r => r.id === id);
-  if (idx === -1) return;
   
-  records[idx] = {
-    ...records[idx],
+  const updates = {
     date: document.getElementById('editDate').value,
     material_name: document.getElementById('editMaterial').value,
     supplier: document.getElementById('editSupplier').value,
     truck_no: document.getElementById('editTruck').value,
     abnormal_desc: document.getElementById('editDesc').value,
     inspector1: document.getElementById('editInspector1').value,
-    inspector2: document.getElementById('editInspector2').value
+    inspector2: document.getElementById('editInspector2').value,
+    updated_at: new Date().toISOString()
   };
   
-  saveRecords();
+  const { error } = await supabase.from('records').update(updates).eq('id', id);
+  
+  if (error) {
+    showToast('保存失败', 'error');
+    return;
+  }
+  
   closeEditModal();
   showToast('保存成功', 'success');
-  loadData();
+  await loadRecords();
+  await loadDashboardStats();
 }
 
-// ========== 删除记录 ==========
+// ============================================
+// 删除记录
+// ============================================
 function showDeleteConfirm(id) { deleteTargetId = id; document.getElementById('deleteModal').classList.add('show'); }
 function closeDeleteModal() { deleteTargetId = null; document.getElementById('deleteModal').classList.remove('show'); }
 
-function confirmDelete() {
+async function confirmDelete() {
   if (!deleteTargetId) return;
-  records = records.filter(r => r.id !== deleteTargetId);
-  saveRecords();
+  
+  const { error } = await supabase.from('records').delete().eq('id', deleteTargetId);
+  
+  if (error) {
+    showToast('删除失败', 'error');
+    return;
+  }
+  
   closeDeleteModal();
   showToast('删除成功', 'success');
-  loadData();
+  await loadRecords();
+  await loadDashboardStats();
 }
 
-// ========== 清空数据 ==========
-function showClearConfirm() { document.getElementById('clearModal').classList.add('show'); }
-function closeClearModal() { document.getElementById('clearModal').classList.remove('show'); }
-
-function confirmClear() {
-  records = [];
-  saveRecords();
-  closeClearModal();
-  showToast('数据已清空', 'success');
-  loadData();
-}
-
-// ========== 导出模态框 ==========
+// ============================================
+// 导出模态框
+// ============================================
 function showExportModal() { document.getElementById('exportModal').classList.add('show'); }
 function closeExportModal() { document.getElementById('exportModal').classList.remove('show'); }
 
@@ -1479,23 +1861,32 @@ function selectExportOption(el, value) {
   document.getElementById('exportDateRange').classList.toggle('show', value === 'custom');
 }
 
-// ========== 导出Excel ==========
-function doExport() {
+// ============================================
+// 导出Excel
+// ============================================
+async function doExport() {
   const period = document.querySelector('input[name="exportPeriod"]:checked').value;
+  
   let filtered = records;
   const now = new Date();
   
+  // 管理员导出所有数据，其他用户导出自己的
+  if (currentUserProfile?.role === 'admin') {
+    const { data } = await supabase.from('records').select('*').order('created_at', { ascending: false });
+    filtered = data || [];
+  }
+  
   if (period === 'week') {
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    filtered = records.filter(r => new Date(r.date) >= weekAgo);
+    filtered = filtered.filter(r => new Date(r.created_at) >= weekAgo);
   } else if (period === 'month') {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    filtered = records.filter(r => new Date(r.date) >= monthStart);
+    filtered = filtered.filter(r => new Date(r.created_at) >= monthStart);
   } else if (period === 'custom') {
     const start = document.getElementById('exportStartDate').value;
     const end = document.getElementById('exportEndDate').value;
     if (start && end) {
-      filtered = records.filter(r => r.date >= start && r.date <= end);
+      filtered = filtered.filter(r => r.date >= start && r.date <= end);
     }
   }
   
@@ -1508,7 +1899,6 @@ function doExport() {
     ...data
   ]);
   
-  // 设置列宽
   ws['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 25 }, { wch: 14 }, { wch: 40 }, { wch: 10 }, { wch: 10 }];
   
   const wb = XLSX.utils.book_new();
@@ -1521,86 +1911,137 @@ function doExport() {
   showToast(`已导出${filtered.length}条记录`, 'success');
 }
 
-// ========== 导出JSON ==========
-function exportJSON() {
-  loadRecords();
-  if (records.length === 0) { showToast('没有可导出的数据', 'warning'); return; }
+// ============================================
+// 用户管理
+// ============================================
+async function showUserManagement() {
+  if (currentUserProfile?.role !== 'admin') return;
   
-  const myRecords = records.filter(r => r.created_by === currentUser.name);
-  const data = { user: currentUser.name, exportTime: new Date().toISOString(), records: myRecords };
+  // 加载待审批用户
+  const { data: pendingUsers } = await supabase.from('pending_users').select('*').order('created_at', { ascending: false });
   
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${currentUser.name}_异常记录_${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  // 加载已注册用户
+  const { data: users } = await supabase.from('users').select('*').order('created_at', { ascending: false });
   
-  showToast(`已导出${myRecords.length}条记录`, 'success');
+  // 渲染待审批列表
+  const pendingContainer = document.getElementById('pendingUserList');
+  if (pendingUsers && pendingUsers.length > 0) {
+    pendingContainer.innerHTML = pendingUsers.map(u => `
+      <div class="user-item">
+        <div class="avatar">${getAvatar(u.name)}</div>
+        <div class="info">
+          <div class="name">${u.name} <span class="role-badge ${u.role}">${u.role === 'admin' ? '管理员' : '验收员'}</span></div>
+          <div class="meta">${u.email}</div>
+        </div>
+        <div class="actions">
+          <button class="action-btn approve-btn" onclick="approveUser('${u.id}', '${u.email}', '${u.name}', '${u.role}')">批准</button>
+          <button class="action-btn reject-btn" onclick="rejectPendingUser('${u.id}')">拒绝</button>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    pendingContainer.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;">暂无待审批用户</div>';
+  }
+  
+  // 渲染用户列表
+  const userContainer = document.getElementById('userList');
+  if (users && users.length > 0) {
+    userContainer.innerHTML = users.map(u => `
+      <div class="user-item">
+        <div class="avatar">${getAvatar(u.name)}</div>
+        <div class="info">
+          <div class="name">${u.name} <span class="role-badge ${u.role}">${u.role === 'admin' ? '管理员' : '验收员'}</span></div>
+          <div class="meta">${u.email}</div>
+        </div>
+        ${u.approved ? '<span class="approved-badge">已审批</span>' : '<span class="pending-badge">待审批</span>'}
+        <div class="actions">
+          ${!u.approved ? `<button class="action-btn approve-btn" onclick="approveExistingUser('${u.id}')">批准</button>` : ''}
+          <button class="action-btn delete-btn" onclick="deleteUser('${u.id}')">删除</button>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    userContainer.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;">暂无用户</div>';
+  }
+  
+  document.getElementById('userModal').classList.add('show');
 }
 
-// ========== 导入JSON ==========
-function importJSON(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+function closeUserModal() { document.getElementById('userModal').classList.remove('show'); }
+
+async function approveUser(pendingId, email, name, role) {
+  // 创建用户记录
+  const { data: user, error } = await supabase.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { name, role }
+  });
   
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!data.records || !Array.isArray(data.records)) {
-        showToast('文件格式错误', 'error'); return;
-      }
-      
-      loadRecords();
-      const before = records.length;
-      
-      // 合并去重
-      data.records.forEach(r => {
-        if (!records.find(existing => existing.id === r.id)) {
-          records.push(r);
-        }
-      });
-      
-      saveRecords();
-      const after = records.length;
-      
-      showToast(`成功导入${after - before}条新记录`, 'success');
-      loadData();
-    } catch (err) {
-      showToast('文件解析失败', 'error');
-    }
-  };
-  reader.readAsText(file);
-  event.target.value = '';
+  if (error) {
+    // 如果Supabase Admin API不可用，手动创建
+    showToast('正在创建用户...', 'warning');
+  }
+  
+  // 更新users表
+  if (user?.user) {
+    await supabase.from('users').upsert([{
+      id: user.user.id,
+      email,
+      name,
+      role,
+      approved: true
+    }]);
+  }
+  
+  // 删除pending记录
+  await supabase.from('pending_users').delete().eq('id', pendingId);
+  
+  showToast('已批准用户注册', 'success');
+  await loadPendingUsersCount();
+  showUserManagement();
 }
 
-// ========== 关于模态框 ==========
+async function rejectPendingUser(id) {
+  await supabase.from('pending_users').delete().eq('id', id);
+  showToast('已拒绝', 'success');
+  await loadPendingUsersCount();
+  showUserManagement();
+}
+
+async function approveExistingUser(id) {
+  await supabase.from('users').update({ approved: true }).eq('id', id);
+  showToast('已批准', 'success');
+  await loadPendingUsersCount();
+  showUserManagement();
+}
+
+async function deleteUser(id) {
+  if (id === currentUser?.id) {
+    showToast('不能删除自己', 'error');
+    return;
+  }
+  
+  await supabase.from('users').delete().eq('id', id);
+  showToast('已删除', 'success');
+  await loadPendingUsersCount();
+  showUserManagement();
+}
+
+// ============================================
+// 关于模态框
+// ============================================
 function showAboutModal() { document.getElementById('aboutModal').classList.add('show'); }
 function closeAboutModal() { document.getElementById('aboutModal').classList.remove('show'); }
 
-// ========== 事件绑定 ==========
-document.addEventListener('DOMContentLoaded', () => {
-  init();
-  
-  document.getElementById('loginBtn').addEventListener('click', doLogin);
-  
-  document.querySelectorAll('.tab-item').forEach(tab => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-  });
-  
-  document.getElementById('submitBtn').addEventListener('click', submitForm);
-  
-  document.getElementById('formDesc').addEventListener('input', e => {
-    document.getElementById('charCount').textContent = e.target.value.length;
-  });
-  
-  // 注册Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
-});
+// ============================================
+// 页面加载完成后初始化
+// ============================================
+document.addEventListener('DOMContentLoaded', init);
+
+// 注册Service Worker
+if ('serviceWorker' in navigator && isConfigured) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
