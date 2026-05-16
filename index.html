@@ -1705,7 +1705,7 @@ function handleMaterialInput(e) {
   
   const matches = materials.filter(m => m.toLowerCase().includes(value));
   if (matches.length === 0) { suggestions.innerHTML = `<div class="material-suggestion">按"${value}"新增</div>`; }
-  else { suggestions.innerHTML = matches.map(m => `<div class="material-suggestion" onclick="selectSuggestion('${m}')"><span class="material-color" style="background:${materialColors[m] || '#607d8b'}"></span>${m}</div>`).join(''); }
+  else { suggestions.innerHTML = matches.map(m => `<div class="material-suggestion" onclick="selectSuggestion('${m}')"><span class="material-color" style="background:${getMaterialColor(m)}"></span>${m}</div>`).join(''); }
   suggestions.classList.add('show');
 }
 
@@ -1742,7 +1742,7 @@ function renderMaterialChart(allRecords) {
   const dist = {};
   allRecords.forEach(r => { dist[r.material_name] = (dist[r.material_name] || 0) + 1; });
   const data = Object.entries(dist).map(([name, value]) => ({ name, value }));
-  const colors = data.map(d => materialColors[d.name] || '#607d8b');
+  const colors = data.map(d => getMaterialColor(d.name));
   materialChart = new Chart(ctx, {
     type: 'doughnut',
     data: { labels: data.map(d => d.name), datasets: [{ data: data.map(d => d.value), backgroundColor: colors, borderWidth: 0, hoverOffset: 10 }] },
@@ -1845,7 +1845,7 @@ function renderRecords() {
   const canEditAll = currentUserProfile?.role === 'admin';
   
   container.innerHTML = pagedRecords.map(record => {
-    const color = materialColors[record.material_name] || '#607d8b';
+    const color = getMaterialColor(record.material_name);
     const canEdit = canEditAll || record.user_id === currentUser?.id;
     const date = new Date(record.created_at);
     return `
@@ -2080,6 +2080,9 @@ function shareToColleague() {
 }
 
 const materialColors = { '钒铁': '#e91e63', '钼铁': '#9c27b0', '铝块': '#2196f3', '铝粒': '#00bcd4', '钒氮合金': '#ff9800', '钛铁': '#4caf50', '铌铁': '#795548', '硼铁': '#607d8b' };
+const colorPool = ['#e91e63','#9c27b0','#2196f3','#00bcd4','#ff9800','#4caf50','#795548','#f44336','#3f51b5','#009688','#ff5722','#8bc34a','#673ab7','#03a9f4','#cddc39','#795548','#607d8b','#e040fb','#00e5ff','#ff6e40'];
+let colorIndex = Object.keys(materialColors).length;
+function getMaterialColor(name) { if (materialColors[name]) return materialColors[name]; materialColors[name] = colorPool[colorIndex % colorPool.length]; colorIndex++; return materialColors[name]; }
 
 document.addEventListener('DOMContentLoaded', init);
 
