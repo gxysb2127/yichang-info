@@ -732,11 +732,10 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
           <label class="form-label">密码</label>
           <input type="password" id="registerPassword" class="form-input" placeholder="请输入密码（至少6位）" required minlength="6">
         </div>
-        <div class="form-group">
+        <div class="form-group" style="display:none;">
           <label class="form-label">角色</label>
           <div class="role-select">
             <div class="role-option selected" data-role="inspector">验收员</div>
-            <div class="role-option" data-role="admin">管理员</div>
           </div>
         </div>
         <button type="submit" class="btn-auth" id="registerBtn">注册</button>
