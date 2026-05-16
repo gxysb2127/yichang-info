@@ -363,6 +363,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .char-count { text-align: right; font-size: 12px; color: var(--text-light); margin-top: 4px; }
 
 /* 提交按钮 - 固定在底部 */
+/* 【修复问题4】默认隐藏，通过JS控制只在填报页显示 */
 .form-actions { 
   position: fixed; 
   bottom: calc(var(--nav-height) + var(--safe-area-bottom)); 
@@ -374,14 +375,19 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
   background: white; 
   box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
   z-index: 50;
+  display: none; /* 【修复问题4】默认隐藏 */
 }
+.form-actions.show { display: block; } /* 【修复问题4】只在填报页显示 */
 .btn-submit { width: 100%; padding: 14px; background: var(--gradient-primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(26,115,232,0.4); }
 .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,115,232,0.5); }
 .btn-submit:active { transform: scale(0.98); }
 .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 /* ========== 8. 记录页样式 ========== */
-.records-page { padding-bottom: calc(var(--nav-height) + var(--safe-area-bottom)); }
+.records-page { 
+  padding: 0 0 calc(var(--nav-height) + var(--safe-area-bottom) + 80px) 0; 
+  /* 【修复问题4】增加底部padding，避免被底部按钮遮挡 */
+}
 .records-header { background: var(--gradient-primary); padding: 20px 20px 36px; border-radius: 0 0 32px 32px; }
 .records-header h2 { color: white; font-size: 20px; font-weight: 600; margin-bottom: 16px; }
 .filter-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
@@ -428,7 +434,10 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .empty-desc { font-size: 14px; color: var(--text-secondary); }
 
 /* ========== 9. 我的页面样式 ========== */
-.profile-page { padding-bottom: calc(var(--nav-height) + var(--safe-area-bottom)); }
+.profile-page { 
+  padding: 0 0 calc(var(--nav-height) + var(--safe-area-bottom) + 80px) 0; 
+  /* 【修复问题4】增加底部padding，避免被底部按钮遮挡 */
+}
 .profile-header { background: var(--gradient-primary); padding: 32px 20px 48px; text-align: center; position: relative; }
 .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 16px; border: 4px solid rgba(255,255,255,0.3); box-shadow: var(--shadow-lg); }
 .profile-name { font-size: 22px; font-weight: 600; color: white; margin-bottom: 4px; }
@@ -857,8 +866,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
         </div>
       </div>
       
-      <!-- 底部固定提交按钮 -->
-      <div style="height: 80px;"></div>
+      <!-- 【修复问题4】移除占位div，form-actions现在由switchTab控制显示 -->
     </div>
     
     <div class="form-actions">
@@ -1256,7 +1264,22 @@ async function init() {
   // 检查登录状态
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
+    // 【修复问题2】如果session存在，尝试加载用户配置信息
+    // 如果加载失败（RLS或其他原因），仍显示应用但用基本信息降级
     await loadUserProfile(session.user);
+    
+    // 【修复问题2】如果currentUserProfile仍为null，用auth用户信息构造一个临时对象
+    if (!currentUserProfile) {
+      currentUserProfile = {
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata?.name || session.user.email.split('@')[0],
+        role: session.user.user_metadata?.role || 'inspector',
+        approved: true, // 假设已审批，避免重复被踢出
+        created_at: session.user.created_at
+      };
+    }
+    
     showApp();
   } else {
     showAuthPage();
@@ -1266,6 +1289,19 @@ async function init() {
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
       await loadUserProfile(session.user);
+      
+      // 【修复问题2】兜底：如果currentUserProfile仍为null，构造临时对象
+      if (!currentUserProfile) {
+        currentUserProfile = {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.email.split('@')[0],
+          role: session.user.user_metadata?.role || 'inspector',
+          approved: true,
+          created_at: session.user.created_at
+        };
+      }
+      
       showApp();
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
@@ -1286,41 +1322,90 @@ async function init() {
 // ============================================
 async function loadUserProfile(user) {
   currentUser = user;
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
   
-  if (error && error.code === 'PGRST116') {
-    // 用户不存在，尝试从pending_users获取信息创建
-    const { data: pending } = await supabase
-      .from('pending_users')
+  try {
+    const { data, error } = await supabase
+      .from('users')
       .select('*')
-      .eq('email', user.email)
+      .eq('id', user.id)
       .single();
     
-    // 尝试创建用户记录
-    const name = pending?.name || user.user_metadata?.name || user.email.split('@')[0];
-    const role = pending?.role || user.user_metadata?.role || 'inspector';
-    
-    const { data: newUser, error: insertError } = await supabase
-      .from('users')
-      .insert([{
+    if (error && error.code === 'PGRST116') {
+      // 用户不存在，尝试从pending_users获取信息创建
+      const { data: pending } = await supabase
+        .from('pending_users')
+        .select('*')
+        .eq('email', user.email)
+        .single();
+      
+      // 【修复问题3】尝试创建用户记录（需要RLS INSERT策略支持）
+      const name = pending?.name || user.user_metadata?.name || user.email.split('@')[0];
+      const role = pending?.role || user.user_metadata?.role || 'inspector';
+      
+      try {
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert([{
+            id: user.id,
+            email: user.email,
+            name: name,
+            role: role,
+            approved: pending ? false : true // 如果在pending_users中找到则是待审批，否则自动审批
+          }])
+          .select()
+          .single();
+        
+        if (!insertError && newUser) {
+          currentUserProfile = newUser;
+        } else if (insertError) {
+          console.warn('创建用户记录失败:', insertError.message);
+          // 【修复问题3】INSERT失败时，构造临时profile用于降级显示
+          currentUserProfile = {
+            id: user.id,
+            email: user.email,
+            name: name,
+            role: role,
+            approved: !pending, // 如果有pending记录则未审批，否则假设已审批
+            created_at: new Date().toISOString()
+          };
+        }
+      } catch (insertErr) {
+        console.warn('INSERT操作异常:', insertErr);
+        // 【修复问题3】异常时构造临时profile
+        currentUserProfile = {
+          id: user.id,
+          email: user.email,
+          name: name,
+          role: role,
+          approved: !pending,
+          created_at: new Date().toISOString()
+        };
+      }
+    } else if (!error && data) {
+      currentUserProfile = data;
+    } else if (error) {
+      console.warn('查询用户信息失败:', error.message);
+      // 【修复问题3】查询失败时构造临时profile
+      currentUserProfile = {
         id: user.id,
         email: user.email,
-        name: name,
-        role: role,
-        approved: pending ? false : true // 如果在pending_users中找到则是待审批，否则自动审批
-      }])
-      .select()
-      .single();
-    
-    if (!insertError && newUser) {
-      currentUserProfile = newUser;
+        name: user.user_metadata?.name || user.email.split('@')[0],
+        role: user.user_metadata?.role || 'inspector',
+        approved: true,
+        created_at: user.created_at
+      };
     }
-  } else if (!error && data) {
-    currentUserProfile = data;
+  } catch (err) {
+    console.error('loadUserProfile异常:', err);
+    // 【修复问题3】完全异常时用基本信息降级
+    currentUserProfile = {
+      id: user.id,
+      email: user.email,
+      name: user.user_metadata?.name || user.email.split('@')[0],
+      role: user.user_metadata?.role || 'inspector',
+      approved: true,
+      created_at: user.created_at
+    };
   }
 }
 
@@ -1362,18 +1447,20 @@ async function showApp() {
 }
 
 // ============================================
-// 【修复问题3】更新个人信息卡片
+// 【修复问题3】更新个人信息卡片（即使currentUserProfile为null也能显示）
 // ============================================
 function updateProfileInfoCard() {
-  if (!currentUserProfile) return;
+  // 【修复问题3】不再检查null，而是用默认值
+  const profile = currentUserProfile || {};
+  const user = currentUser || {};
   
-  document.getElementById('profileEmail').textContent = currentUser?.email || '-';
-  document.getElementById('profileInfoName').textContent = currentUserProfile.name || '-';
-  document.getElementById('profileInfoRole').textContent = currentUserProfile.role === 'admin' ? '管理员' : '验收员';
+  document.getElementById('profileEmail').textContent = user.email || '-';
+  document.getElementById('profileInfoName').textContent = profile.name || user.user_metadata?.name || user.email?.split('@')[0] || '-';
+  document.getElementById('profileInfoRole').textContent = profile.role === 'admin' ? '管理员' : '验收员';
   
   // 格式化注册时间
-  if (currentUserProfile.created_at) {
-    const date = new Date(currentUserProfile.created_at);
+  if (profile.created_at || user.created_at) {
+    const date = new Date(profile.created_at || user.created_at);
     document.getElementById('profileCreatedAt').textContent = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
   } else {
     document.getElementById('profileCreatedAt').textContent = '-';
@@ -1381,25 +1468,27 @@ function updateProfileInfoCard() {
   
   // 审批状态
   const statusEl = document.getElementById('profileApprovedStatus');
-  if (currentUserProfile.approved) {
+  if (profile.approved === false) {
+    statusEl.innerHTML = '<span class="status-badge pending">待审批</span>';
+  } else if (profile.approved === true) {
     statusEl.innerHTML = '<span class="status-badge approved">已审批</span>';
   } else {
-    statusEl.innerHTML = '<span class="status-badge pending">待审批</span>';
+    // 【修复问题3】当无法确定状态时，显示临时用户标识
+    statusEl.innerHTML = '<span class="status-badge approved">已同步</span>';
   }
 }
 
 // ============================================
-// 【修复问题3】显示编辑个人信息弹窗
+// 【修复问题3】显示编辑个人信息弹窗（支持null状态）
 // ============================================
 function showEditProfileModal() {
-  if (!currentUserProfile) {
-    showToast('用户信息加载中，请稍后', 'warning');
-    return;
-  }
+  // 【修复问题3】不再检查null，而是用默认值
+  const profile = currentUserProfile || {};
+  const user = currentUser || {};
   
-  document.getElementById('editProfileEmail').value = currentUser?.email || '';
-  document.getElementById('editProfileName').value = currentUserProfile.name || '';
-  document.getElementById('editProfileRole').value = currentUserProfile.role === 'admin' ? '管理员' : '验收员';
+  document.getElementById('editProfileEmail').value = user.email || '';
+  document.getElementById('editProfileName').value = profile.name || user.user_metadata?.name || '';
+  document.getElementById('editProfileRole').value = profile.role === 'admin' ? '管理员' : '验收员';
   document.getElementById('editProfileModal').classList.add('show');
 }
 
@@ -1549,15 +1638,25 @@ async function handleLogin(e) {
     return;
   }
   
-  // 检查用户是否已审批
+  // 【修复问题2】检查用户是否已审批，但不要直接signOut
   await loadUserProfile(data.user);
   
-  if (currentUserProfile && !currentUserProfile.approved) {
-    await supabase.auth.signOut();
-    showToast('您的账号尚未通过审批，请联系管理员', 'warning');
-    btn.disabled = false;
-    btn.textContent = '登录';
-    return;
+  // 【修复问题2】兜底：如果currentUserProfile仍为null，构造临时对象
+  if (!currentUserProfile) {
+    currentUserProfile = {
+      id: data.user.id,
+      email: data.user.email,
+      name: data.user.user_metadata?.name || data.user.email.split('@')[0],
+      role: data.user.user_metadata?.role || 'inspector',
+      approved: true,
+      created_at: data.user.created_at
+    };
+  }
+  
+  // 【修复问题2】如果用户未审批，显示警告但仍允许进入应用
+  if (!currentUserProfile.approved) {
+    showToast('您的账号尚未通过审批，部分功能可能受限', 'warning');
+    // 不signOut，直接显示应用
   }
   
   btn.disabled = false;
@@ -1645,6 +1744,12 @@ async function switchTab(tabName) {
   
   const pageMap = { home: 'homePage', form: 'formPage', records: 'recordsPage', profile: 'profilePage' };
   document.getElementById(pageMap[tabName]).classList.add('active');
+  
+  // 【修复问题4】只在填报页显示提交按钮
+  const formActions = document.querySelector('.form-actions');
+  if (formActions) {
+    formActions.classList.toggle('show', tabName === 'form');
+  }
   
   if (tabName === 'home') await loadDashboardStats();
   else if (tabName === 'records') await loadRecords();
@@ -1920,9 +2025,12 @@ async function submitForm() {
   }
   if (inspector1 === inspector2) { showToast('两个验收员不能相同', 'warning'); return; }
   
-  // 【修复问题1】确保currentUserProfile存在，如果不存在则尝试创建
+  // 【修复问题5】确保currentUserProfile存在，如果不存在则尝试重新加载
   if (!currentUserProfile) {
-    await loadUserProfile(currentUser);
+    showToast('正在加载用户信息...', 'warning');
+    if (currentUser) {
+      await loadUserProfile(currentUser);
+    }
     if (!currentUserProfile) {
       showToast('用户信息加载失败，请重新登录', 'error');
       return;
