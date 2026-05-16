@@ -1,72 +1,70 @@
 // Service Worker for 异常信息填报系统 V3
-const CACHE_NAME = 'yichang-info-v6';
-const urlsToCache = [
-  '/',
-  '/index.html',
+const CACHE_NAME = 'yichang-info-v7';
+const CDN_CACHE = 'cdn-v7';
+
+// 只缓存CDN静态资源
+const cdnUrls = [
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
 ];
 
-// 安装
+// 安装 - 预缓存CDN资源
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    caches.open(CDN_CACHE)
+      .then(cache => cache.addAll(cdnUrls))
       .then(() => self.skipWaiting())
   );
 });
 
-// 激活
+// 激活 - 清理旧缓存
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames.filter(name => name !== CDN_CACHE)
+          .map(name => caches.delete(name))
       );
     }).then(() => self.clients.claim())
   );
 });
 
-// 请求拦截
+// 请求拦截 - 网络优先，CDN降级缓存
 self.addEventListener('fetch', event => {
-  // 跳过非GET请求
+  // 跳过非GET请求（INSERT/UPDATE等不拦截）
   if (event.request.method !== 'GET') return;
   
-  // 跳过Supabase API请求
-  if (event.request.url.includes('supabase') || event.request.url.includes('localhost:54321')) {
+  // Supabase API请求不拦截，直接走网络
+  if (event.request.url.includes('supabase')) return;
+  
+  // index.html 永远走网络（确保用户拿到最新代码）
+  if (event.request.url.includes('index.html') || 
+      event.request.url.endsWith('/') ||
+      event.request.url.endsWith('yichang-info')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
     return;
   }
   
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
+  // CDN资源：缓存优先，网络降级
+  if (event.request.url.includes('cdn.jsdelivr.net')) {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
         return fetch(event.request).then(response => {
-          // 不缓存非成功响应
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
+          const clone = response.clone();
+          caches.open(CDN_CACHE).then(cache => cache.put(event.request, clone));
           return response;
         });
       })
-  );
-});
-
-// 后台同步（用于离线提交）
-self.addEventListener('sync', event => {
-  if (event.tag === 'sync-records') {
-    console.log('Background sync triggered for records');
+    );
+    return;
   }
+  
+  // 其他请求：网络优先
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
 });

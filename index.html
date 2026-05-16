@@ -1629,14 +1629,21 @@ async function loadRecords() {
   document.getElementById('recordsLoading').style.display = 'flex';
   document.getElementById('recordsTimeline').style.display = 'none';
   
-  let query = supabase.from('records').select('*').order('created_at', { ascending: false });
-  // 只有admin能看所有记录，其他用户只能看自己的
-  if (currentUserProfile?.role !== 'admin') { query = query.eq('user_id', currentUser.id); }
+  try {
+    let query = supabase.from('records').select('*').order('created_at', { ascending: false });
+    if (currentUserProfile?.role !== 'admin') { query = query.eq('user_id', currentUser.id); }
+    
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('加载超时')), 15000));
+    const { data, error } = await Promise.race([query, timeout]);
+    
+    if (error) { showToast('加载记录失败: ' + error.message, 'error'); document.getElementById('recordsLoading').style.display = 'none'; return; }
+    records = data || [];
+  } catch(e) {
+    showToast('加载记录超时，请检查网络', 'error');
+    document.getElementById('recordsLoading').style.display = 'none';
+    return;
+  }
   
-  const { data, error } = await query;
-  if (error) { showToast('加载记录失败', 'error'); document.getElementById('recordsLoading').style.display = 'none'; return; }
-  
-  records = data || [];
   document.getElementById('recordsLoading').style.display = 'none';
   document.getElementById('recordsTimeline').style.display = 'block';
   renderRecords();
@@ -1782,11 +1789,23 @@ async function submitForm() {
   }
   
   const record = { user_id: currentUser.id, date, material_name: material, supplier, truck_no: truck, abnormal_desc: desc, inspector1, inspector2, created_by: currentUserProfile?.name || currentUser.email };
-  const { error } = await supabase.from('records').insert([record]);
   
-  if (error) {
-    console.error('提交失败详情:', error);
-    showToast('提交失败: ' + error.message, 'error');
+  // 提交记录（带超时）
+  let insertError = null;
+  try {
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('请求超时，请检查网络')), 15000));
+    const result = await Promise.race([
+      supabase.from('records').insert([record]),
+      timeout
+    ]);
+    insertError = result.error;
+  } catch(e) {
+    insertError = e;
+  }
+  
+  if (insertError) {
+    console.error('提交失败详情:', insertError);
+    showToast('提交失败: ' + (insertError.message || '未知错误'), 'error');
     btn.disabled = false;
     btn.textContent = '提交异常信息';
     return;
