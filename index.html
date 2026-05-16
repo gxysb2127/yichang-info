@@ -6,21 +6,23 @@
   <meta name="theme-color" content="#1a73e8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="沙钢永兴特钢技术质量处验收班异常信息填报系统 V3">
+  <meta name="description" content="沙钢永兴特钢技术质量处验收班异常信息填报系统">
+  
+  <!-- 微信分享Meta标签 -->
+  <meta property="og:title" content="异常信息填报系统">
+  <meta property="og:description" content="沙钢永兴特钢技术质量处验收班 - 快速填报异常信息">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:type" content="website">
+  
   <title>异常信息填报系统 V3</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a73e8' width='512' height='512' rx='100'/><text x='256' y='320' font-size='280' text-anchor='middle' fill='white'>⚠</text></svg>">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a73e8' width='512' height='512' rx='100'/><text x='256' y='320' font-size='280' text-anchor='middle' fill='white'>⚠</text></svg>">
+  <link rel="icon" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-/* ========================================
-   异常信息填报系统 V3 - Supabase云端版
-   沙钢永兴特钢 技术质量处验收班
-   ======================================== */
-
-/* ========== 1. 配置区域 ========== */
 :root {
   --primary: #1a73e8;
   --primary-light: #4fc3f7;
@@ -28,8 +30,6 @@
   --accent: #ff6f00;
   --accent-light: #ffa726;
   --bg: #f0f2f5;
-  --bg-card: #ffffff;
-  --bg-dark: #1a1a2e;
   --text: #1a1a2e;
   --text-secondary: #6b7280;
   --text-light: #9ca3af;
@@ -43,15 +43,12 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-full: 9999px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
   --shadow: 0 2px 8px rgba(0,0,0,0.08);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
   --shadow-xl: 0 12px 32px rgba(0,0,0,0.15);
   --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-  --gradient-bg: linear-gradient(180deg, #e8f0fe 0%, var(--bg) 100%);
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --safe-area-bottom: env(safe-area-inset-bottom, 20px);
   --nav-height: 70px;
 }
@@ -67,22 +64,56 @@ html, body {
   overflow-x: hidden;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: 0 !important;
 }
 
 body { max-width: 480px; margin: 0 auto; background: var(--bg); position: relative; }
 a { color: var(--primary); text-decoration: none; }
 
-/* ========== 2. 页面容器 ========== */
+/* 骨架屏 */
+.skeleton-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+.skeleton-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.skeleton-logo {
+  width: 80px; height: 80px;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+.skeleton-logo img { width: 100%; height: 100%; object-fit: cover; }
+.skeleton-text { color: rgba(255,255,255,0.8); font-size: 14px; letter-spacing: 1px; }
+.skeleton-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-top: 20px;
+}
+@keyframes skeletonPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.9; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 0.3; } }
+
+/* 页面容器 */
 .page { display: none; min-height: 100vh; padding-bottom: calc(var(--nav-height) + var(--safe-area-bottom)); animation: fadeIn 0.3s ease; }
 .page.active { display: block; }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ========== 3. Toast提示 ========== */
+/* Toast */
 .toast {
   position: fixed;
   top: 20px;
@@ -96,7 +127,6 @@ a { color: var(--primary); text-decoration: none; }
   z-index: 10000;
   transition: transform 0.3s ease;
   box-shadow: var(--shadow-lg);
-  white-space: nowrap;
   max-width: calc(100% - 40px);
   text-align: center;
 }
@@ -105,12 +135,13 @@ a { color: var(--primary); text-decoration: none; }
 .toast.error { background: var(--danger); }
 .toast.warning { background: var(--warning); }
 
-/* ========== 4. 成功动画 ========== */
+/* 成功动画 */
 .success-animation {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(255,255,255,0.95);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 9999;
@@ -128,23 +159,15 @@ a { color: var(--primary); text-decoration: none; }
   justify-content: center;
   animation: scaleIn 0.5s ease;
 }
-.success-checkmark::after {
-  content: '✓';
-  font-size: 40px;
-  color: white;
-  animation: checkIn 0.3s ease 0.2s both;
-}
-@keyframes scaleIn {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
+.success-checkmark::after { content: '✓'; font-size: 40px; color: white; animation: checkIn 0.3s ease 0.2s both; }
+.success-text { margin-top: 16px; font-size: 16px; color: var(--text); font-weight: 500; }
+@keyframes scaleIn { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 @keyframes checkIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
 
-/* ========== 5. 登录/注册页样式 ========== */
+/* 认证页 */
 .auth-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+  background: linear-gradient(135deg, #c62828 0%, #b71c1c 50%, #880e0e 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -158,30 +181,25 @@ a { color: var(--primary); text-decoration: none; }
   position: absolute;
   top: -50%; left: -50%;
   width: 200%; height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
   animation: pulse 8s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.1); opacity: 0.3; }
 }
 .auth-header { text-align: center; margin-bottom: 32px; position: relative; z-index: 1; }
 .auth-logo {
   width: 80px; height: 80px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 24px;
-  display: flex; align-items: center; justify-content: center;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
   margin: 0 auto 24px;
-  backdrop-filter: blur(10px);
+  background: white;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   animation: float 3s ease-in-out infinite;
 }
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-.auth-logo svg { width: 48px; height: 48px; fill: white; }
-.auth-title { font-size: 28px; font-weight: 700; color: white; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-.auth-subtitle { font-size: 14px; color: rgba(255,255,255,0.8); letter-spacing: 1px; }
+.auth-logo img { width: 100%; height: 100%; object-fit: cover; }
+.auth-title { font-size: 26px; font-weight: 700; color: white; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.auth-subtitle { font-size: 13px; color: rgba(255,255,255,0.8); letter-spacing: 1px; }
 
 .auth-card {
   background: white;
@@ -195,35 +213,36 @@ a { color: var(--primary); text-decoration: none; }
 }
 .auth-tabs { display: flex; margin-bottom: 24px; border-radius: var(--radius); overflow: hidden; background: #f0f0f0; }
 .auth-tab { flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.3s; }
-.auth-tab.active { background: var(--primary); color: white; }
+.auth-tab.active { background: #c62828; color: white; }
 .auth-form { display: none; }
 .auth-form.active { display: block; }
 
 .form-group { margin-bottom: 16px; }
-.form-group:last-child { margin-bottom: 0; }
 .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
-.form-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; transition: all 0.3s ease; background: #fafbfc; }
-.form-input:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(26,115,232,0.1); }
-.form-input::placeholder { color: var(--text-light); }
+.form-input { 
+  width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; 
+  transition: all 0.3s ease; background: #fafbfc; 
+}
+.form-input:focus { outline: none; border-color: #c62828; background: white; box-shadow: 0 0 0 3px rgba(198,40,40,0.1); }
+.form-input:active { transform: scale(0.99); }
+.btn-touch { transition: all 0.15s ease; }
+.btn-touch:active { transform: scale(0.96) !important; }
 
-.role-select { display: flex; gap: 8px; margin-top: 8px; }
-.role-option { flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: var(--radius); text-align: center; cursor: pointer; transition: all 0.3s; font-size: 13px; }
-.role-option:hover { border-color: var(--primary); }
-.role-option.selected { border-color: var(--primary); background: #e8f0fe; color: var(--primary); }
-
-.btn-auth { width: 100%; padding: 14px; background: var(--gradient-primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(26,115,232,0.4); margin-top: 16px; }
-.btn-auth:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,115,232,0.5); }
+.btn-auth { 
+  width: 100%; padding: 14px; background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
+  color: white; border: none; border-radius: var(--radius-lg); font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(198,40,40,0.3); margin-top: 16px;
+}
+.btn-auth:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(198,40,40,0.4); }
 .btn-auth:active { transform: scale(0.98); }
 .btn-auth:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.btn-auth.secondary { background: #f0f0f0; color: var(--text); box-shadow: none; }
-.btn-auth.secondary:hover { background: #e5e5e5; }
 
 .config-hint { background: #fff3e0; border-radius: var(--radius); padding: 12px; margin-bottom: 16px; font-size: 12px; color: #e65100; line-height: 1.6; }
 
-/* ========== 6. 首页/仪表盘 ========== */
+/* 首页 */
 .home-page { padding-bottom: calc(var(--nav-height) + var(--safe-area-bottom)); }
 .home-header {
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
   padding: 24px 20px 40px;
   border-radius: 0 0 32px 32px;
   position: relative;
@@ -234,14 +253,6 @@ a { color: var(--primary); text-decoration: none; }
   position: absolute;
   top: -50%; right: -20%;
   width: 200px; height: 200px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 50%;
-}
-.home-header::after {
-  content: '';
-  position: absolute;
-  bottom: -30%; left: -10%;
-  width: 150px; height: 150px;
   background: rgba(255,255,255,0.08);
   border-radius: 50%;
 }
@@ -251,84 +262,56 @@ a { color: var(--primary); text-decoration: none; }
 .home-sync { font-size: 11px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: var(--radius-full); display: flex; align-items: center; gap: 4px; }
 .home-sync .dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
 
-/* 统计卡片网格 */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin: -24px 16px 16px;
-  position: relative;
-  z-index: 2;
-}
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: -24px 16px 16px; position: relative; z-index: 2; }
 .stat-card {
-  background: white;
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  box-shadow: var(--shadow-md);
-  transition: all 0.3s ease;
-  animation: fadeInUp 0.5s ease forwards;
-  opacity: 0;
+  background: white; border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-md);
+  transition: all 0.3s ease; animation: fadeInUp 0.5s ease forwards; opacity: 0;
 }
 .stat-card:nth-child(1) { animation-delay: 0.1s; }
 .stat-card:nth-child(2) { animation-delay: 0.2s; }
 .stat-card:nth-child(3) { animation-delay: 0.3s; }
 .stat-card:nth-child(4) { animation-delay: 0.4s; }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-.stat-icon {
-  width: 40px; height: 40px;
-  border-radius: var(--radius);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 12px;
-  font-size: 20px;
-}
+.stat-icon { width: 40px; height: 40px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 20px; }
+.stat-icon.red { background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); }
 .stat-icon.blue { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
 .stat-icon.green { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); }
 .stat-icon.orange { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); }
-.stat-icon.purple { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); }
 .stat-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 4px; }
 .stat-label { font-size: 12px; color: var(--text-secondary); }
 
-/* 图表区域 */
 .chart-section { margin: 16px; }
 .chart-card { background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
 .chart-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-.chart-title::before { content: ''; width: 4px; height: 16px; background: var(--gradient-primary); border-radius: 2px; }
+.chart-title::before { content: ''; width: 4px; height: 16px; background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); border-radius: 2px; }
 .chart-container { position: relative; height: 200px; }
 .chart-container.pie { height: 220px; }
 
-/* ========== 7. 填报页样式 ========== */
+/* 填报页 */
 .form-page { padding: 16px; padding-bottom: calc(calc(var(--nav-height) + 40px) + var(--safe-area-bottom)); }
 .form-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
 .form-header h2 { font-size: 20px; font-weight: 600; }
+.form-header .draft-hint { font-size: 12px; color: var(--warning); background: #fff3e0; padding: 4px 8px; border-radius: var(--radius-sm); }
+
 .form-card { background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; animation: fadeInUp 0.4s ease forwards; }
 .form-card:nth-child(2) { animation-delay: 0.05s; }
 .form-card:nth-child(3) { animation-delay: 0.1s; }
 .form-card:nth-child(4) { animation-delay: 0.15s; }
 .form-card:nth-child(5) { animation-delay: 0.2s; }
-.form-card:nth-child(6) { animation-delay: 0.25s; }
-.form-card:nth-child(7) { animation-delay: 0.3s; }
 
 .form-label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
-.form-label .icon { width: 28px; height: 28px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.form-label .icon { width: 28px; height: 28px; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 .form-label .required { color: var(--danger); }
 
-/* 物料选择标签 */
 .material-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .material-tag {
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  font-size: 13px; font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-  background: #f3f4f6;
-  color: var(--text-secondary);
+  padding: 8px 16px; border-radius: var(--radius-full); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.3s; border: 2px solid transparent; background: #f3f4f6; color: var(--text-secondary); user-select: none;
 }
 .material-tag:hover { transform: translateY(-2px); }
+.material-tag:active { transform: scale(0.95); }
 .material-tag.selected { color: white; border-color: transparent; }
 
-/* 物料颜色 */
 .material-tag[data-material="钒铁"] { background: #fce4ec; color: #c2185b; }
 .material-tag[data-material="钒铁"].selected { background: linear-gradient(135deg, #e91e63, #c2185b); }
 .material-tag[data-material="钼铁"] { background: #f3e5f5; color: #7b1fa2; }
@@ -346,57 +329,42 @@ a { color: var(--primary); text-decoration: none; }
 .material-tag[data-material="硼铁"] { background: #eceff1; color: #455a64; }
 .material-tag[data-material="硼铁"].selected { background: linear-gradient(135deg, #607d8b, #455a64); }
 
-/* 物料自动补全 */
 .material-input-wrapper { position: relative; }
-.material-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid var(--primary); border-top: none; border-radius: 0 0 var(--radius) var(--radius); max-height: 200px; overflow-y: auto; z-index: 100; display: none; }
+.material-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #c62828; border-top: none; border-radius: 0 0 var(--radius) var(--radius); max-height: 200px; overflow-y: auto; z-index: 100; display: none; box-shadow: var(--shadow-md); }
 .material-suggestions.show { display: block; }
 .material-suggestion { padding: 10px 16px; cursor: pointer; font-size: 14px; transition: background 0.2s; }
-.material-suggestion:hover { background: #f0f4ff; }
+.material-suggestion:hover { background: #fff3f3; }
 .material-suggestion .material-color { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
 
-/* 日期输入 */
-input[type="date"] { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; font-family: inherit; background: #fafbfc; cursor: pointer; }
-input[type="date"]:focus { outline: none; border-color: var(--primary); background: white; }
+input[type="date"] { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: var(--radius); font-size: 15px; font-family: inherit; background: #fafbfc; cursor: pointer; transition: all 0.3s; }
+input[type="date"]:focus { outline: none; border-color: #c62828; background: white; }
 
-/* 文本域 */
 textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .char-count { text-align: right; font-size: 12px; color: var(--text-light); margin-top: 4px; }
 
-/* 提交按钮 - 固定在底部 */
-/* 【修复问题4】默认隐藏，通过JS控制只在填报页显示 */
-.form-actions { 
-  position: fixed; 
-  bottom: calc(var(--nav-height) + var(--safe-area-bottom)); 
-  left: 50%; 
-  transform: translateX(-50%); 
-  width: 100%; 
-  max-width: 480px; 
-  padding: 12px 16px; 
-  background: white; 
-  box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
-  z-index: 50;
-  display: none; /* 【修复问题4】默认隐藏 */
-}
-.form-actions.show { display: block; } /* 【修复问题4】只在填报页显示 */
-.btn-submit { width: 100%; padding: 14px; background: var(--gradient-primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(26,115,232,0.4); }
-.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,115,232,0.5); }
+.form-actions { position: fixed; bottom: calc(var(--nav-height) + var(--safe-area-bottom)); left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; padding: 12px 16px; background: white; box-shadow: 0 -4px 12px rgba(0,0,0,0.1); z-index: 50; display: none; }
+.form-actions.show { display: block; }
+.btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); color: white; border: none; border-radius: var(--radius-lg); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(198,40,40,0.3); }
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(198,40,40,0.4); }
 .btn-submit:active { transform: scale(0.98); }
 .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-/* ========== 8. 记录页样式 ========== */
-.records-page { 
-  padding: 0 0 calc(var(--nav-height) + var(--safe-area-bottom) + 80px) 0; 
-  /* 【修复问题4】增加底部padding，避免被底部按钮遮挡 */
-}
-.records-header { background: var(--gradient-primary); padding: 20px 20px 36px; border-radius: 0 0 32px 32px; }
+/* 记录页 */
+.records-page { padding: 0 0 calc(var(--nav-height) + var(--safe-area-bottom) + 80px) 0; }
+.records-header { background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); padding: 20px 20px 36px; border-radius: 0 0 32px 32px; }
 .records-header h2 { color: white; font-size: 20px; font-weight: 600; margin-bottom: 16px; }
 .filter-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
 .filter-bar::-webkit-scrollbar { display: none; }
-.filter-btn { padding: 8px 16px; background: rgba(255,255,255,0.2); border: none; border-radius: var(--radius-full); color: white; font-size: 13px; white-space: nowrap; cursor: pointer; transition: all 0.3s ease; }
-.filter-btn:hover { background: rgba(255,255,255,0.3); }
-.filter-btn.active { background: white; color: var(--primary); }
+.filter-btn { padding: 8px 16px; background: rgba(255,255,255,0.2); border: none; border-radius: var(--radius-full); color: white; font-size: 13px; white-space: nowrap; cursor: pointer; transition: all 0.3s; }
+.filter-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+.filter-btn.active { background: white; color: #c62828; }
+.filter-btn:active { transform: scale(0.95); }
 
-/* 时间线 */
+.search-bar { margin: -16px 16px 16px; position: relative; z-index: 1; }
+.search-input { width: 100%; padding: 12px 16px 12px 40px; border: none; border-radius: var(--radius-lg); font-size: 14px; background: white; box-shadow: var(--shadow-md); }
+.search-input:focus { outline: none; box-shadow: var(--shadow-md), 0 0 0 3px rgba(198,40,40,0.1); }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: 0.5; }
+
 .timeline { padding: 16px; margin-top: -16px; }
 .timeline-item { display: flex; gap: 16px; margin-bottom: 24px; animation: fadeInUp 0.4s ease forwards; opacity: 0; }
 .timeline-item:nth-child(1) { animation-delay: 0.1s; }
@@ -405,249 +373,199 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .timeline-item:nth-child(4) { animation-delay: 0.25s; }
 .timeline-item:nth-child(5) { animation-delay: 0.3s; }
 .timeline-line { display: flex; flex-direction: column; align-items: center; width: 20px; }
-.timeline-dot { width: 12px; height: 12px; background: var(--primary); border-radius: 50%; border: 3px solid white; box-shadow: var(--shadow-sm); flex-shrink: 0; }
+.timeline-dot { width: 12px; height: 12px; background: #c62828; border-radius: 50%; border: 3px solid white; box-shadow: var(--shadow-sm); flex-shrink: 0; }
 .timeline-track { width: 2px; flex: 1; background: #e5e7eb; margin-top: 6px; }
 .timeline-item:last-child .timeline-track { display: none; }
-.timeline-content { flex: 1; background: white; border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow); }
+.timeline-content { flex: 1; background: white; border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow); transition: all 0.2s; }
+.timeline-content:hover { transform: translateX(4px); box-shadow: var(--shadow-md); }
 .record-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
 .record-material { display: inline-block; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; color: white; }
-.record-date { font-size: 12px; color: var(--text-secondary); }
+.record-date { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
 .record-creator { font-size: 11px; color: var(--text-light); background: #f0f0f0; padding: 2px 8px; border-radius: var(--radius-full); }
 .record-body { margin-bottom: 12px; }
 .record-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 13px; flex-wrap: wrap; }
 .record-row .label { color: var(--text-secondary); min-width: 56px; }
 .record-row .value { color: var(--text); flex: 1; }
-.record-desc { background: #f8f9fa; padding: 10px 12px; border-radius: var(--radius); font-size: 13px; color: var(--text); line-height: 1.5; margin: 10px 0; border-left: 3px solid var(--primary); }
+.record-desc { background: #f8f9fa; padding: 10px 12px; border-radius: var(--radius); font-size: 13px; color: var(--text); line-height: 1.5; margin: 10px 0; border-left: 3px solid #c62828; }
 .record-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid #f0f0f0; flex-wrap: wrap; gap: 8px; }
 .record-inspectors { display: flex; align-items: center; }
-.record-inspector-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid white; margin-left: -6px; }
+.record-inspector-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid white; margin-left: -6px; }
 .record-inspector-avatar:first-child { margin-left: 0; }
 .record-actions { display: flex; gap: 8px; }
 .record-action { width: 28px; height: 28px; border: none; background: #f0f1f3; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
 .record-action:hover { background: #e5e7eb; transform: scale(1.1); }
+.record-action:active { transform: scale(0.9); }
 .record-action.delete:hover { background: #fee2e2; }
 
-/* 空状态 */
 .empty-state { text-align: center; padding: 60px 20px; }
-.empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+.empty-illustration { width: 160px; height: 160px; margin: 0 auto 24px; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: float 3s ease-in-out infinite; }
+.empty-illustration .icon { font-size: 64px; }
 .empty-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-.empty-desc { font-size: 14px; color: var(--text-secondary); }
+.empty-desc { font-size: 14px; color: var(--text-secondary); max-width: 240px; margin: 0 auto; line-height: 1.6; }
+.empty-action { margin-top: 24px; display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); color: white; border-radius: var(--radius-full); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(198,40,40,0.3); }
+.empty-action:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(198,40,40,0.4); }
+.empty-action:active { transform: scale(0.95); }
 
-/* ========== 9. 我的页面样式 ========== */
-.profile-page { 
-  padding: 0 0 calc(var(--nav-height) + var(--safe-area-bottom) + 80px) 0; 
-  /* 【修复问题4】增加底部padding，避免被底部按钮遮挡 */
-}
-.profile-header { background: var(--gradient-primary); padding: 32px 20px 48px; text-align: center; position: relative; }
-.profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 16px; border: 4px solid rgba(255,255,255,0.3); box-shadow: var(--shadow-lg); }
-.profile-name { font-size: 22px; font-weight: 600; color: white; margin-bottom: 4px; }
-.profile-role { font-size: 14px; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.2); padding: 4px 16px; border-radius: var(--radius-full); display: inline-block; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; margin-top: 16px; }
+.pagination-btn { padding: 8px 16px; background: white; border: 1px solid #e5e7eb; border-radius: var(--radius); font-size: 13px; cursor: pointer; transition: all 0.2s; }
+.pagination-btn:hover:not(:disabled) { background: #fff3f3; border-color: #c62828; }
+.pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pagination-info { font-size: 13px; color: var(--text-secondary); }
 
-/* 个人信息卡片 */
-.profile-info-card {
-  background: white;
-  border-radius: var(--radius-lg);
-  margin: -24px 16px 16px;
-  position: relative;
-  z-index: 1;
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
-}
-.profile-info-header {
-  background: linear-gradient(135deg, #e8f0fe 0%, #f0f4ff 100%);
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #e5e7eb;
-}
-.profile-info-header h3 {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.profile-info-header h3::before {
-  content: '';
-  width: 4px;
-  height: 14px;
-  background: var(--gradient-primary);
-  border-radius: 2px;
-}
-.profile-edit-btn {
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: var(--radius);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.profile-edit-btn:hover {
-  background: var(--primary-dark);
-  transform: translateY(-1px);
-}
-.profile-info-list {
-  padding: 8px 0;
-}
-.profile-info-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #f5f5f5;
-}
-.profile-info-item:last-child {
-  border-bottom: none;
-}
-.profile-info-item .info-label {
-  width: 80px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
-.profile-info-item .info-value {
-  flex: 1;
-  font-size: 14px;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.profile-info-item .info-value.readonly {
-  color: var(--text-secondary);
-}
-.profile-info-item .info-value .status-badge {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-}
-.profile-info-item .info-value .status-badge.pending {
-  background: #fff3e0;
-  color: #e65100;
-}
-.profile-info-item .info-value .status-badge.approved {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
+/* 我的页面 */
+.profile-page { padding: 0 0 calc(var(--nav-height) + var(--safe-area-bottom) + 80px) 0; }
+.profile-header { background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); padding: 32px 20px 48px; text-align: center; position: relative; }
+.profile-header::before { content: ''; position: absolute; top: -50%; right: -30%; width: 200px; height: 200px; background: rgba(255,255,255,0.06); border-radius: 50%; }
+.profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 16px; border: 4px solid rgba(255,255,255,0.3); box-shadow: var(--shadow-lg); position: relative; z-index: 1; }
+.profile-name { font-size: 22px; font-weight: 600; color: white; margin-bottom: 4px; position: relative; z-index: 1; }
+.profile-role { font-size: 14px; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.2); padding: 4px 16px; border-radius: var(--radius-full); display: inline-block; position: relative; z-index: 1; }
+
+.profile-info-card { background: white; border-radius: var(--radius-lg); margin: -24px 16px 16px; position: relative; z-index: 1; box-shadow: var(--shadow-md); overflow: hidden; }
+.profile-info-header { background: linear-gradient(135deg, #ffebee 0%, #fff3f3 100%); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e5e7eb; }
+.profile-info-header h3 { font-size: 15px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.profile-info-header h3::before { content: ''; width: 4px; height: 14px; background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); border-radius: 2px; }
+.profile-edit-btn { background: #c62828; color: white; border: none; padding: 6px 12px; border-radius: var(--radius); font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
+.profile-edit-btn:hover { background: #b71c1c; transform: translateY(-1px); }
+.profile-edit-btn:active { transform: scale(0.95); }
+.profile-info-list { padding: 8px 0; }
+.profile-info-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f5f5f5; }
+.profile-info-item:last-child { border-bottom: none; }
+.profile-info-item .info-label { width: 80px; font-size: 13px; color: var(--text-secondary); flex-shrink: 0; }
+.profile-info-item .info-value { flex: 1; font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-info-item .info-value.readonly { color: var(--text-secondary); }
+.profile-info-item .info-value .status-badge { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); }
+.profile-info-item .info-value .status-badge.pending { background: #fff3e0; color: #e65100; }
+.profile-info-item .info-value .status-badge.approved { background: #e8f5e9; color: #2e7d32; }
+
 .profile-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: -24px 16px 16px; position: relative; z-index: 1; }
 .profile-stat-card { background: white; border-radius: var(--radius-lg); padding: 20px; text-align: center; box-shadow: var(--shadow-md); }
-.profile-stat-value { font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.profile-stat-value { font-size: 32px; font-weight: 700; color: #c62828; margin-bottom: 4px; }
 .profile-stat-label { font-size: 13px; color: var(--text-secondary); }
+
 .menu-section { margin: 16px; }
 .menu-list { background: white; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
 .menu-list.mt-16 { margin-top: 16px; }
 .menu-item { display: flex; align-items: center; padding: 16px; gap: 12px; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid #f0f0f0; }
 .menu-item:last-child { border-bottom: none; }
 .menu-item:hover { background: #f8f9fa; }
+.menu-item:active { background: #f0f0f0; }
 .menu-item.danger .menu-icon { background: #fee2e2; }
 .menu-item.danger .title { color: var(--danger); }
 .menu-item.admin-only { display: none; }
 .menu-item.admin-only.show { display: flex; }
 .menu-icon { width: 40px; height: 40px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 18px; background: #f0f1f3; flex-shrink: 0; }
+.menu-icon.red { background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); }
 .menu-icon.blue { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
 .menu-icon.green { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); }
 .menu-icon.orange { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); }
-.menu-icon.purple { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); }
-.menu-icon.red { background: #fee2e2; }
 .menu-icon.cyan { background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); }
 .menu-text { flex: 1; }
-.menu-text .title { font-size: 15px; font-weight: 500; color: var(--text); }
+.menu-text .title { font-size: 15px; font-weight: 500; color: var(--text); display: flex; align-items: center; }
 .menu-text .desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 .menu-badge { background: var(--danger); color: white; font-size: 11px; padding: 2px 6px; border-radius: var(--radius-full); margin-left: 8px; }
 .menu-arrow { font-size: 20px; color: var(--text-light); }
 
-/* ========== 10. 底部导航栏 ========== */
+/* 底部导航 */
 .tab-bar {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 8px 0;
-  padding-bottom: calc(8px + var(--safe-area-bottom));
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-  border-radius: 20px 20px 0 0;
-  z-index: 100;
-  height: var(--nav-height);
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px;
+  background: white; display: flex; align-items: center; justify-content: space-around;
+  padding: 8px 0; padding-bottom: calc(8px + var(--safe-area-bottom));
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1); border-radius: 20px 20px 0 0; z-index: 100; height: var(--nav-height);
 }
 .tab-item { display: flex; flex-direction: column; align-items: center; padding: 8px 16px; cursor: pointer; transition: all 0.2s; }
-.tab-item .icon { width: 24px; height: 24px; fill: var(--text-secondary); margin-bottom: 4px; transition: fill 0.2s; }
-.tab-item .label { font-size: 11px; color: var(--text-secondary); transition: color 0.2s; }
-.tab-item.active .icon { fill: var(--primary); }
-.tab-item.active .label { color: var(--primary); font-weight: 600; }
-.center-tab-btn { width: 48px; height: 48px; background: var(--gradient-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(26,115,232,0.4); }
+.tab-item .icon { width: 24px; height: 24px; fill: var(--text-secondary); margin-bottom: 4px; transition: all 0.2s; }
+.tab-item .label { font-size: 11px; color: var(--text-secondary); transition: all 0.2s; }
+.tab-item.active .icon { fill: #c62828; transform: scale(1.1); }
+.tab-item.active .label { color: #c62828; font-weight: 600; }
+.tab-item:active { transform: scale(0.9); }
+.center-tab-btn { width: 48px; height: 48px; background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(198,40,40,0.4); transition: all 0.2s; }
+.center-tab-btn:active { transform: scale(0.9); }
 .center-tab-btn .icon { fill: white; margin: 0; width: 24px; height: 24px; }
 
-/* ========== 11. 模态框 ========== */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+/* 模态框 */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .modal-overlay.show { opacity: 1; pointer-events: auto; }
-.modal { background: white; border-radius: var(--radius-xl); width: 100%; max-width: 360px; max-height: 80vh; overflow-y: auto; transform: scale(0.9); transition: transform 0.3s; }
-.modal-overlay.show .modal { transform: scale(1); }
+.modal { background: white; border-radius: var(--radius-xl); width: 100%; max-width: 360px; max-height: 80vh; overflow-y: auto; transform: scale(0.9) translateY(20px); transition: transform 0.3s; box-shadow: var(--shadow-xl); }
+.modal-overlay.show .modal { transform: scale(1) translateY(0); }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px; border-bottom: 1px solid #f0f0f0; }
 .modal-header h3 { font-size: 18px; font-weight: 600; }
-.modal-close { width: 32px; height: 32px; border: none; background: #f0f0f0; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.modal-close { width: 32px; height: 32px; border: none; background: #f0f0f0; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.modal-close:hover { background: #e5e5e5; transform: scale(1.1); }
+.modal-close:active { transform: scale(0.9); }
 .modal-body { padding: 20px; }
 .modal-footer { padding: 16px 20px; border-top: 1px solid #f0f0f0; display: flex; gap: 12px; }
-.modal-footer .btn { flex: 1; padding: 12px; border-radius: var(--radius); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-.modal-footer .btn-cancel { background: #f0f0f0; border: none; color: var(--text); }
+.modal-footer .btn { flex: 1; padding: 12px; border-radius: var(--radius); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; }
+.modal-footer .btn:active { transform: scale(0.95); }
+.modal-footer .btn-cancel { background: #f0f0f0; color: var(--text); }
 .modal-footer .btn-cancel:hover { background: #e5e7eb; }
-.modal-footer .btn-danger { background: var(--danger); border: none; color: white; }
+.modal-footer .btn-danger { background: var(--danger); color: white; }
 .modal-footer .btn-danger:hover { background: #dc2626; }
-.modal-footer .btn-success { background: var(--success); border: none; color: white; }
+.modal-footer .btn-success { background: var(--success); color: white; }
 .modal-footer .btn-success:hover { background: #059669; }
-.modal-footer .btn-primary { background: var(--primary); border: none; color: white; }
-.modal-footer .btn-primary:hover { background: #1565c0; }
+.modal-footer .btn-primary { background: #c62828; color: white; }
+.modal-footer .btn-primary:hover { background: #b71c1c; }
 
-/* 编辑模态框 */
 .edit-form .form-group { margin-bottom: 16px; }
 
-/* 导出模态框 */
+/* 审批模态框 */
+.approve-modal .user-info { background: #f8f9fa; padding: 16px; border-radius: var(--radius); margin-bottom: 16px; }
+.approve-modal .user-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.approve-modal .user-email { font-size: 13px; color: var(--text-secondary); }
+.approve-modal .role-select-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.approve-modal .role-options { display: flex; gap: 8px; }
+.approve-modal .role-option { flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: var(--radius); text-align: center; cursor: pointer; transition: all 0.2s; background: white; }
+.approve-modal .role-option:hover { border-color: #c62828; }
+.approve-modal .role-option.selected { border-color: #c62828; background: #fff3f3; }
+.approve-modal .role-option .role-icon { font-size: 24px; margin-bottom: 4px; }
+.approve-modal .role-option .role-name { font-size: 13px; font-weight: 500; }
+.approve-modal .role-option .role-desc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.approve-modal .role-option.selected .role-name { color: #c62828; }
+
+/* 角色切换 */
+.role-toggle { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border: none; border-radius: var(--radius-full); font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.role-toggle.admin { background: #e3f2fd; color: #c62828; }
+.role-toggle.admin:hover { background: #ffcdd2; }
+.role-toggle.inspector { background: #e8f5e9; color: #2e7d32; }
+.role-toggle.inspector:hover { background: #c8e6c9; }
+.role-toggle:active { transform: scale(0.95); }
+
 .export-options { display: flex; flex-direction: column; gap: 12px; }
 .export-option { display: flex; align-items: center; padding: 16px; background: #f8f9fa; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
 .export-option:hover { background: #f0f1f3; }
-.export-option.selected { border-color: var(--primary); background: #e8f0fe; }
+.export-option:active { transform: scale(0.98); }
+.export-option.selected { border-color: #c62828; background: #fff3f3; }
 .export-option input[type="radio"] { display: none; }
 .export-option .radio { width: 20px; height: 20px; border: 2px solid #d1d5db; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
-.export-option.selected .radio { border-color: var(--primary); background: var(--primary); }
+.export-option.selected .radio { border-color: #c62828; background: #c62828; }
 .export-option.selected .radio::after { content: ''; width: 8px; height: 8px; background: white; border-radius: 50%; }
 .export-option .text { font-size: 14px; color: var(--text); }
 .export-date-range { margin-top: 12px; display: none; }
 .export-date-range.show { display: block; }
 .export-date-range input { width: 100%; margin-bottom: 8px; }
 
-/* 用户管理模态框 */
 .user-list { max-height: 300px; overflow-y: auto; }
-.user-item { display: flex; align-items: center; padding: 12px; background: #f8f9fa; border-radius: var(--radius); margin-bottom: 8px; }
+.user-item { display: flex; align-items: center; padding: 12px; background: #f8f9fa; border-radius: var(--radius); margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
 .user-item:last-child { margin-bottom: 0; }
-.user-item .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; margin-right: 12px; }
-.user-item .info { flex: 1; }
-.user-item .name { font-size: 14px; font-weight: 500; color: var(--text); }
+.user-item .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); display: flex; align-items: center; justify-content: center; margin-right: 8px; font-size: 18px; }
+.user-item .info { flex: 1; min-width: 120px; }
+.user-item .name { font-size: 14px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 6px; }
 .user-item .meta { font-size: 12px; color: var(--text-secondary); }
-.user-item .role-badge { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); margin-left: 8px; }
-.user-item .role-badge.admin { background: #e3f2fd; color: var(--primary); }
-.user-item .role-badge.inspector { background: #e8f5e9; color: var(--success); }
-.user-item .pending-badge { background: var(--warning); color: white; font-size: 10px; padding: 2px 6px; border-radius: var(--radius-full); margin-left: 8px; }
-.user-item .actions { display: flex; gap: 8px; }
-.user-item .action-btn { padding: 6px 12px; border: none; border-radius: var(--radius); font-size: 12px; cursor: pointer; transition: all 0.2s; }
+.user-item .role-badge { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); }
+.user-item .role-badge.admin { background: #ffebee; color: #c62828; }
+.user-item .role-badge.inspector { background: #e8f5e9; color: #2e7d32; }
+.user-item .pending-badge { background: var(--warning); color: white; font-size: 10px; padding: 2px 6px; border-radius: var(--radius-full); }
+.user-item .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.user-item .action-btn { padding: 6px 10px; border: none; border-radius: var(--radius); font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.user-item .action-btn:active { transform: scale(0.95); }
 .user-item .approve-btn { background: var(--success); color: white; }
 .user-item .reject-btn { background: #f0f0f0; color: var(--text); }
 .user-item .delete-btn { background: var(--danger); color: white; }
-.user-item .approved-badge { background: #e8f5e9; color: var(--success); font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); margin-left: 8px; }
+.user-item .role-switch-btn { background: #c62828; color: white; }
+.user-item .approved-badge { background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); white-space: nowrap; }
 
-/* 关于模态框 */
 .about-content { text-align: center; }
-.about-logo { width: 64px; height: 64px; background: var(--gradient-primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; }
+.about-logo { width: 64px; height: 64px; background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; overflow: hidden; }
+.about-logo img { width: 100%; height: 100%; object-fit: cover; }
 .about-name { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
 .about-version { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
 .about-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
@@ -656,16 +574,11 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .about-info p:last-child { margin-bottom: 0; }
 .about-info strong { color: var(--text); }
 
-/* ========== 12. 辅助类 ========== */
 .hidden { display: none !important; }
 .text-center { text-align: center; }
-.mt-16 { margin-top: 16px; }
-.mb-16 { margin-bottom: 16px; }
 .loading { display: flex; align-items: center; justify-content: center; padding: 40px; }
-.loading-spinner { width: 40px; height: 40px; border: 3px solid #f0f0f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.loading-spinner { width: 40px; height: 40px; border: 3px solid #f0f0f0; border-top-color: #c62828; border-radius: 50%; animation: spin 1s linear infinite; }
 
-/* ========== 13. 响应式 ========== */
 @media (max-width: 380px) {
   .stats-grid { gap: 8px; }
   .stat-card { padding: 12px; }
@@ -673,31 +586,40 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
   .auth-title { font-size: 24px; }
 }
 
-/* ========== 14. 滚动条美化 ========== */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 2px; }
 </style>
 </head>
 <body>
-  <!-- ========== Toast提示 ========== -->
+  <!-- 骨架屏Loading -->
+  <div id="skeleton" class="skeleton-overlay">
+    <div class="skeleton-logo">
+      <img src="logo.png" alt="Loading">
+    </div>
+    <p class="skeleton-text">异常信息填报系统</p>
+    <div class="skeleton-spinner"></div>
+  </div>
+  
+  <!-- Toast提示 -->
   <div id="toast" class="toast"></div>
   
-  <!-- ========== 成功动画 ========== -->
+  <!-- 成功动画 -->
   <div id="successAnimation" class="success-animation">
     <div class="success-checkmark"></div>
+    <p class="success-text">提交成功！</p>
   </div>
 
-  <!-- ========== 配置提示（仅未配置时显示） ========== -->
+  <!-- 配置提示 -->
   <div id="configBanner" class="hidden" style="position:fixed;top:0;left:0;right:0;background:#fff3e0;padding:10px 16px;font-size:12px;color:#e65100;z-index:9999;text-align:center;">
     ⚠️ 请先在代码顶部配置 Supabase URL 和 ANON_KEY
   </div>
 
-  <!-- ========== 认证页 ========== -->
+  <!-- 认证页 -->
   <div id="authPage" class="page auth-page">
     <div class="auth-header">
       <div class="auth-logo">
-        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <img src="logo.png" alt="Logo">
       </div>
       <h1 class="auth-title">异常信息填报系统</h1>
       <p class="auth-subtitle">沙钢永兴特钢 · 技术质量处验收班</p>
@@ -710,11 +632,10 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       </div>
       
       <div class="auth-tabs">
-        <div class="auth-tab active" data-tab="login">登录</div>
-        <div class="auth-tab" data-tab="register">注册</div>
+        <div class="auth-tab active btn-touch" data-tab="login">登录</div>
+        <div class="auth-tab btn-touch" data-tab="register">注册</div>
       </div>
       
-      <!-- 登录表单 -->
       <form id="loginForm" class="auth-form active">
         <div class="form-group">
           <label class="form-label">邮箱</label>
@@ -724,10 +645,9 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
           <label class="form-label">密码</label>
           <input type="password" id="loginPassword" class="form-input" placeholder="请输入密码" required>
         </div>
-        <button type="submit" class="btn-auth" id="loginBtn">登录</button>
+        <button type="submit" class="btn-auth btn-touch" id="loginBtn">登录</button>
       </form>
       
-      <!-- 注册表单 -->
       <form id="registerForm" class="auth-form">
         <div class="form-group">
           <label class="form-label">姓名</label>
@@ -741,21 +661,15 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
           <label class="form-label">密码</label>
           <input type="password" id="registerPassword" class="form-input" placeholder="请输入密码（至少6位）" required minlength="6">
         </div>
-        <div class="form-group" style="display:none;">
-          <label class="form-label">角色</label>
-          <div class="role-select">
-            <div class="role-option selected" data-role="inspector">验收员</div>
-          </div>
-        </div>
-        <button type="submit" class="btn-auth" id="registerBtn">注册</button>
+        <button type="submit" class="btn-auth btn-touch" id="registerBtn">注册</button>
       </form>
     </div>
   </div>
 
-  <!-- ========== 主应用容器 ========== -->
+  <!-- 主应用容器 -->
   <div id="appContainer" class="hidden">
     
-    <!-- ========== 首页/仪表盘 ========== -->
+    <!-- 首页 -->
     <div id="homePage" class="page home-page">
       <div class="home-header">
         <div class="home-welcome">
@@ -772,12 +686,12 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon blue">📊</div>
+          <div class="stat-icon red">📊</div>
           <div class="stat-value" id="weekCount">-</div>
           <div class="stat-label">本周异常</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon green">📅</div>
+          <div class="stat-icon blue">📅</div>
           <div class="stat-value" id="monthCount">-</div>
           <div class="stat-label">本月异常</div>
         </div>
@@ -787,7 +701,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
           <div class="stat-label">物料种类</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon purple">👤</div>
+          <div class="stat-icon green">👤</div>
           <div class="stat-value" id="myCount">-</div>
           <div class="stat-label">我填报数</div>
         </div>
@@ -810,10 +724,11 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       </div>
     </div>
 
-    <!-- ========== 填报页 ========== -->
+    <!-- 填报页 -->
     <div id="formPage" class="page form-page">
       <div class="form-header">
         <h2>异常信息填报</h2>
+        <span id="draftHint" class="draft-hint hidden">📝 有草稿</span>
       </div>
       
       <div class="form-card">
@@ -865,23 +780,26 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
           <input type="text" id="formInspector2" class="form-input" placeholder="请输入验收员2姓名">
         </div>
       </div>
-      
-      <!-- 【修复问题4】移除占位div，form-actions现在由switchTab控制显示 -->
     </div>
     
     <div class="form-actions">
-      <button id="submitBtn" class="btn-submit">提交异常信息</button>
+      <button id="submitBtn" class="btn-submit btn-touch">提交异常信息</button>
     </div>
 
-    <!-- ========== 记录页 ========== -->
+    <!-- 记录页 -->
     <div id="recordsPage" class="page records-page">
       <div class="records-header">
         <h2>异常记录</h2>
         <div class="filter-bar">
-          <button class="filter-btn active" data-filter="all">全部</button>
-          <button class="filter-btn" data-filter="week">本周</button>
-          <button class="filter-btn" data-filter="month">本月</button>
+          <button class="filter-btn active btn-touch" data-filter="all">全部</button>
+          <button class="filter-btn btn-touch" data-filter="week">本周</button>
+          <button class="filter-btn btn-touch" data-filter="month">本月</button>
         </div>
+      </div>
+      
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="搜索物料、供货单位...">
       </div>
       
       <div id="recordsLoading" class="loading">
@@ -891,14 +809,26 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       <div class="timeline" id="recordsTimeline" style="display:none;">
         <div id="recordsList"></div>
         <div id="emptyState" class="empty-state hidden">
-          <div class="empty-icon">📋</div>
+          <div class="empty-illustration">
+            <span class="icon">📋</span>
+          </div>
           <h3 class="empty-title">暂无记录</h3>
-          <p class="empty-desc">点击下方"填报"按钮添加异常信息</p>
+          <p class="empty-desc">点击下方"填报"按钮，添加第一条异常信息吧！</p>
+          <button class="empty-action btn-touch" onclick="switchTab('form')">
+            <span>去填报</span>
+            <span>→</span>
+          </button>
         </div>
+      </div>
+      
+      <div id="pagination" class="pagination hidden">
+        <button id="prevPage" class="pagination-btn btn-touch">上一页</button>
+        <span id="pageInfo" class="pagination-info">1/1</span>
+        <button id="nextPage" class="pagination-btn btn-touch">下一页</button>
       </div>
     </div>
 
-    <!-- ========== 我的页面 ========== -->
+    <!-- 我的页面 -->
     <div id="profilePage" class="page profile-page">
       <div class="profile-header">
         <div id="profileAvatar" class="profile-avatar">👤</div>
@@ -906,11 +836,10 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
         <span id="profileRole" class="profile-role">验收员</span>
       </div>
       
-      <!-- 【修复问题3】个人信息卡片 -->
       <div class="profile-info-card">
         <div class="profile-info-header">
           <h3>个人信息</h3>
-          <button class="profile-edit-btn" onclick="showEditProfileModal()">✏️ 修改</button>
+          <button class="profile-edit-btn btn-touch" onclick="showEditProfileModal()">✏️ 修改</button>
         </div>
         <div class="profile-info-list">
           <div class="profile-info-item">
@@ -949,15 +878,16 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       
       <div class="menu-section">
         <div class="menu-list">
-          <div class="menu-item admin-only" onclick="showUserManagement()">
-            <div class="menu-icon cyan">👥</div>
+          <!-- 【重要】管理员专属功能：只有role=admin才能看到 -->
+          <div class="menu-item admin-only btn-touch" onclick="showUserManagement()">
+            <div class="menu-icon red">👥</div>
             <div class="menu-text">
               <div class="title">用户管理<span id="pendingBadge" class="menu-badge hidden">0</span></div>
-              <div class="desc">审批新注册用户</div>
+              <div class="desc">审批新注册用户、分配角色权限</div>
             </div>
             <span class="menu-arrow">›</span>
           </div>
-          <div class="menu-item" onclick="showExportModal()">
+          <div class="menu-item btn-touch" onclick="showExportModal()">
             <div class="menu-icon green">📊</div>
             <div class="menu-text">
               <div class="title">导出Excel</div>
@@ -965,8 +895,16 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
             </div>
             <span class="menu-arrow">›</span>
           </div>
-          <div class="menu-item" onclick="showAboutModal()">
-            <div class="menu-icon blue">ℹ️</div>
+          <div class="menu-item btn-touch" onclick="shareToColleague()">
+            <div class="menu-icon orange">🔗</div>
+            <div class="menu-text">
+              <div class="title">分享给同事</div>
+              <div class="desc">复制链接邀请同事使用</div>
+            </div>
+            <span class="menu-arrow">›</span>
+          </div>
+          <div class="menu-item btn-touch" onclick="showAboutModal()">
+            <div class="menu-icon cyan">ℹ️</div>
             <div class="menu-text">
               <div class="title">关于系统</div>
               <div class="desc">版本信息和帮助</div>
@@ -976,7 +914,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
         </div>
         
         <div class="menu-list mt-16">
-          <div class="menu-item danger" onclick="logout()">
+          <div class="menu-item danger btn-touch" onclick="logout()">
             <div class="menu-icon red">🚪</div>
             <div class="menu-text">
               <div class="title">退出登录</div>
@@ -988,7 +926,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
       </div>
     </div>
 
-    <!-- ========== 底部导航栏 ========== -->
+    <!-- 底部导航栏 -->
     <nav class="tab-bar">
       <div class="tab-item active" data-tab="home">
         <svg class="icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1011,97 +949,101 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
     </nav>
   </div>
 
-  <!-- ========== 编辑模态框 ========== -->
+  <!-- 编辑模态框 -->
   <div id="editModal" class="modal-overlay" onclick="if(event.target===this)closeEditModal()">
     <div class="modal">
       <div class="modal-header">
         <h3>编辑记录</h3>
-        <button class="modal-close" onclick="closeEditModal()">×</button>
+        <button class="modal-close btn-touch" onclick="closeEditModal()">×</button>
       </div>
       <div class="modal-body edit-form">
         <input type="hidden" id="editId">
-        <div class="form-group">
-          <label class="form-label">日期</label>
-          <input type="date" id="editDate" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">物料名称</label>
-          <input type="text" id="editMaterial" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">供货单位</label>
-          <input type="text" id="editSupplier" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">车号</label>
-          <input type="text" id="editTruck" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">异常情况</label>
-          <textarea id="editDesc" class="form-input"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">验收员1</label>
-          <input type="text" id="editInspector1" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">验收员2</label>
-          <input type="text" id="editInspector2" class="form-input">
-        </div>
+        <div class="form-group"><label class="form-label">日期</label><input type="date" id="editDate" class="form-input"></div>
+        <div class="form-group"><label class="form-label">物料名称</label><input type="text" id="editMaterial" class="form-input"></div>
+        <div class="form-group"><label class="form-label">供货单位</label><input type="text" id="editSupplier" class="form-input"></div>
+        <div class="form-group"><label class="form-label">车号</label><input type="text" id="editTruck" class="form-input"></div>
+        <div class="form-group"><label class="form-label">异常情况</label><textarea id="editDesc" class="form-input"></textarea></div>
+        <div class="form-group"><label class="form-label">验收员1</label><input type="text" id="editInspector1" class="form-input"></div>
+        <div class="form-group"><label class="form-label">验收员2</label><input type="text" id="editInspector2" class="form-input"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-cancel" onclick="closeEditModal()">取消</button>
-        <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+        <button class="btn btn-cancel btn-touch" onclick="closeEditModal()">取消</button>
+        <button class="btn btn-primary btn-touch" onclick="saveEdit()">保存</button>
       </div>
     </div>
   </div>
 
-  <!-- ========== 删除确认模态框 ========== -->
+  <!-- 删除确认模态框 -->
   <div id="deleteModal" class="modal-overlay" onclick="if(event.target===this)closeDeleteModal()">
     <div class="modal">
       <div class="modal-header">
         <h3>确认删除</h3>
-        <button class="modal-close" onclick="closeDeleteModal()">×</button>
+        <button class="modal-close btn-touch" onclick="closeDeleteModal()">×</button>
       </div>
       <div class="modal-body text-center">
         <p style="margin-bottom:16px;font-size:15px">确定要删除这条异常记录吗？</p>
         <p style="color:var(--text-secondary);font-size:13px">此操作不可恢复</p>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-cancel" onclick="closeDeleteModal()">取消</button>
-        <button class="btn btn-danger" onclick="confirmDelete()">删除</button>
+        <button class="btn btn-cancel btn-touch" onclick="closeDeleteModal()">取消</button>
+        <button class="btn btn-danger btn-touch" onclick="confirmDelete()">删除</button>
       </div>
     </div>
   </div>
 
-  <!-- ========== 导出Excel模态框 ========== -->
+  <!-- 审批用户模态框 -->
+  <div id="approveModal" class="modal-overlay" onclick="if(event.target===this)closeApproveModal()">
+    <div class="modal approve-modal">
+      <div class="modal-header">
+        <h3>审批用户</h3>
+        <button class="modal-close btn-touch" onclick="closeApproveModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="user-info">
+          <div class="user-name" id="approveUserName">-</div>
+          <div class="user-email" id="approveUserEmail">-</div>
+        </div>
+        <div class="role-select-title"><span>🎯</span><span>分配角色权限</span></div>
+        <div class="role-options">
+          <div class="role-option btn-touch selected" data-role="inspector" onclick="selectApproveRole(this)">
+            <div class="role-icon">👷</div>
+            <div class="role-name">验收员</div>
+            <div class="role-desc">填报/查看记录</div>
+          </div>
+          <div class="role-option btn-touch" data-role="admin" onclick="selectApproveRole(this)">
+            <div class="role-icon">👑</div>
+            <div class="role-name">管理员</div>
+            <div class="role-desc">管理用户/导出</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel btn-touch" onclick="closeApproveModal()">取消</button>
+        <button class="btn btn-success btn-touch" onclick="confirmApprove()">批准并分配角色</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 导出Excel模态框 -->
   <div id="exportModal" class="modal-overlay" onclick="if(event.target===this)closeExportModal()">
     <div class="modal">
       <div class="modal-header">
         <h3>导出Excel</h3>
-        <button class="modal-close" onclick="closeExportModal()">×</button>
+        <button class="modal-close btn-touch" onclick="closeExportModal()">×</button>
       </div>
       <div class="modal-body">
         <div class="export-options">
-          <label class="export-option selected" onclick="selectExportOption(this,'week')">
-            <input type="radio" name="exportPeriod" value="week" checked>
-            <span class="radio"></span>
-            <span class="text">本周数据</span>
+          <label class="export-option selected btn-touch" onclick="selectExportOption(this,'week')">
+            <input type="radio" name="exportPeriod" value="week" checked><span class="radio"></span><span class="text">本周数据</span>
           </label>
-          <label class="export-option" onclick="selectExportOption(this,'month')">
-            <input type="radio" name="exportPeriod" value="month">
-            <span class="radio"></span>
-            <span class="text">本月数据</span>
+          <label class="export-option btn-touch" onclick="selectExportOption(this,'month')">
+            <input type="radio" name="exportPeriod" value="month"><span class="radio"></span><span class="text">本月数据</span>
           </label>
-          <label class="export-option" onclick="selectExportOption(this,'all')">
-            <input type="radio" name="exportPeriod" value="all">
-            <span class="radio"></span>
-            <span class="text">全部数据</span>
+          <label class="export-option btn-touch" onclick="selectExportOption(this,'all')">
+            <input type="radio" name="exportPeriod" value="all"><span class="radio"></span><span class="text">全部数据</span>
           </label>
-          <label class="export-option" onclick="selectExportOption(this,'custom')">
-            <input type="radio" name="exportPeriod" value="custom">
-            <span class="radio"></span>
-            <span class="text">自定义范围</span>
+          <label class="export-option btn-touch" onclick="selectExportOption(this,'custom')">
+            <input type="radio" name="exportPeriod" value="custom"><span class="radio"></span><span class="text">自定义范围</span>
           </label>
         </div>
         <div id="exportDateRange" class="export-date-range">
@@ -1110,65 +1052,66 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-cancel" onclick="closeExportModal()">取消</button>
-        <button class="btn btn-primary" onclick="doExport()">导出</button>
+        <button class="btn btn-cancel btn-touch" onclick="closeExportModal()">取消</button>
+        <button class="btn btn-primary btn-touch" onclick="doExport()">导出</button>
       </div>
     </div>
   </div>
 
-  <!-- ========== 用户管理模态框 ========== -->
+  <!-- 用户管理模态框 -->
   <div id="userModal" class="modal-overlay" onclick="if(event.target===this)closeUserModal()">
-    <div class="modal" style="max-width:400px;">
+    <div class="modal" style="max-width:420px;">
       <div class="modal-header">
         <h3>用户管理</h3>
-        <button class="modal-close" onclick="closeUserModal()">×</button>
+        <button class="modal-close btn-touch" onclick="closeUserModal()">×</button>
       </div>
       <div class="modal-body">
-        <h4 style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">待审批用户</h4>
+        <h4 style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">⏳ 待审批用户</h4>
         <div id="pendingUserList" class="user-list">
-          <div style="text-align:center;color:var(--text-light);padding:20px;">暂无待审批用户</div>
+          <div style="text-align:center;color:var(--text-light);padding:20px;">暂无待审批用户 ✓</div>
         </div>
-        <h4 style="font-size:14px;color:var(--text-secondary);margin:20px 0 12px;">已注册用户</h4>
+        <h4 style="font-size:14px;color:var(--text-secondary);margin:20px 0 12px;">✅ 已注册用户</h4>
         <div id="userList" class="user-list"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-primary" onclick="closeUserModal()" style="flex:1">关闭</button>
+        <button class="btn btn-primary btn-touch" onclick="closeUserModal()" style="flex:1">关闭</button>
       </div>
     </div>
   </div>
 
-  <!-- ========== 关于模态框 ========== -->
+  <!-- 关于模态框 -->
   <div id="aboutModal" class="modal-overlay" onclick="if(event.target===this)closeAboutModal()">
     <div class="modal">
       <div class="modal-header">
         <h3>关于系统</h3>
-        <button class="modal-close" onclick="closeAboutModal()">×</button>
+        <button class="modal-close btn-touch" onclick="closeAboutModal()">×</button>
       </div>
       <div class="modal-body about-content">
-        <div class="about-logo">⚠️</div>
+        <div class="about-logo"><img src="logo.png" alt="Logo"></div>
         <h2 class="about-name">异常信息填报系统</h2>
         <p class="about-version">版本 3.0 (云端版)</p>
         <p class="about-desc">沙钢永兴特钢技术质量处验收班专用<br>数据存储于Supabase云端数据库</p>
         <div class="about-info">
           <p><strong>主要特性：</strong></p>
           <p>• 多用户云端数据共享</p>
-          <p>• 管理员可审批新用户</p>
+          <p>• 管理员审批与角色分配</p>
           <p>• 数据实时同步</p>
           <p>• 支持Excel导出</p>
+          <p>• PWA应用，支持添加到桌面</p>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-primary" onclick="closeAboutModal()" style="flex:1">知道了</button>
+        <button class="btn btn-primary btn-touch" onclick="closeAboutModal()" style="flex:1">知道了</button>
       </div>
     </div>
   </div>
 
-  <!-- ========== 编辑个人信息模态框 ========== -->
+  <!-- 编辑个人信息模态框 -->
   <div id="editProfileModal" class="modal-overlay" onclick="if(event.target===this)closeEditProfileModal()">
     <div class="modal">
       <div class="modal-header">
         <h3>修改个人信息</h3>
-        <button class="modal-close" onclick="closeEditProfileModal()">×</button>
+        <button class="modal-close btn-touch" onclick="closeEditProfileModal()">×</button>
       </div>
       <div class="modal-body edit-form">
         <div class="form-group">
@@ -1185,15 +1128,15 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-cancel" onclick="closeEditProfileModal()">取消</button>
-        <button class="btn btn-primary" onclick="saveProfile()">保存</button>
+        <button class="btn btn-cancel btn-touch" onclick="closeEditProfileModal()">取消</button>
+        <button class="btn btn-primary btn-touch" onclick="saveProfile()">保存</button>
       </div>
     </div>
   </div>
 
 <script>
 // ============================================
-// 配置区域 - 请填入你的Supabase项目配置
+// 配置区域
 // ============================================
 const SUPABASE_URL = 'https://gniwmbfpntgqguubxwwj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_a5C8NQ3_cnk5PPvU7P25Uw_IoCVsxUf';
@@ -1212,16 +1155,20 @@ let trendChart = null;
 let materialChart = null;
 let isConfigured = SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY';
 
-// ============================================
-// 物料颜色
-// ============================================
-const materialColors = {
-  '钒铁': '#e91e63', '钼铁': '#9c27b0', '铝块': '#2196f3', '铝粒': '#00bcd4',
-  '钒氮合金': '#ff9800', '钛铁': '#4caf50', '铌铁': '#795548', '硼铁': '#607d8b'
-};
+const PAGE_SIZE = 10;
+let currentPage = 1;
+let totalPages = 1;
+let searchKeyword = '';
+
+const DRAFT_KEY = 'form_draft_v3';
+
+let approvePendingId = null;
+let approveEmail = null;
+let approveName = null;
+let selectedApproveRole = 'inspector';
 
 // ============================================
-// Toast提示
+// Toast
 // ============================================
 function showToast(message, type = '') {
   const toast = document.getElementById('toast');
@@ -1235,62 +1182,69 @@ function showToast(message, type = '') {
 // 成功动画
 // ============================================
 function showSuccessAnimation() {
-  const anim = document.getElementById('successAnimation');
-  anim.classList.add('show');
-  setTimeout(() => anim.classList.remove('show'), 1500);
+  document.getElementById('successAnimation').classList.add('show');
+  setTimeout(() => document.getElementById('successAnimation').classList.remove('show'), 1500);
 }
 
 // ============================================
-// 初始化
+// 隐藏骨架屏
+// ============================================
+function hideSkeleton() {
+  document.getElementById('skeleton').classList.add('hidden');
+}
+
+// ============================================
+// 【核心】初始化 - Session持久化
 // ============================================
 async function init() {
   if (!isConfigured || typeof window.supabase === 'undefined') {
     document.getElementById('configHint').classList.remove('hidden');
     document.getElementById('configBanner').classList.remove('hidden');
     showAuthPage();
+    hideSkeleton();
     return;
   }
   
   try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch(e) {
-    console.error('Supabase初始化失败:', e);
     document.getElementById('configHint').classList.remove('hidden');
     document.getElementById('configBanner').classList.remove('hidden');
     showAuthPage();
+    hideSkeleton();
     return;
   }
   
-  // 检查登录状态
+  // 【关键】检查Supabase session，自动登录
   const { data: { session } } = await supabase.auth.getSession();
+  
   if (session) {
-    // 【修复问题2】如果session存在，尝试加载用户配置信息
-    // 如果加载失败（RLS或其他原因），仍显示应用但用基本信息降级
+    // 有session，直接加载用户信息并显示应用
     await loadUserProfile(session.user);
     
-    // 【修复问题2】如果currentUserProfile仍为null，用auth用户信息构造一个临时对象
     if (!currentUserProfile) {
       currentUserProfile = {
         id: session.user.id,
         email: session.user.email,
         name: session.user.user_metadata?.name || session.user.email.split('@')[0],
         role: session.user.user_metadata?.role || 'inspector',
-        approved: true, // 假设已审批，避免重复被踢出
+        approved: true,
         created_at: session.user.created_at
       };
     }
     
+    // 显示应用（不再检查是否审批，直接进入）
     showApp();
   } else {
+    // 无session，显示登录页
     showAuthPage();
+    hideSkeleton();
   }
   
-  // 监听认证状态变化
+  // 监听认证状态变化（保持登录状态）
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
       await loadUserProfile(session.user);
-      
-      // 【修复问题2】兜底：如果currentUserProfile仍为null，构造临时对象
       if (!currentUserProfile) {
         currentUserProfile = {
           id: session.user.id,
@@ -1301,20 +1255,19 @@ async function init() {
           created_at: session.user.created_at
         };
       }
-      
       showApp();
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
       currentUserProfile = null;
       showAuthPage();
+      hideSkeleton();
     }
   });
   
   setupEventListeners();
   renderMaterialTags();
-  
-  // 设置默认日期
   document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
+  checkDraft();
 }
 
 // ============================================
@@ -1331,81 +1284,37 @@ async function loadUserProfile(user) {
       .single();
     
     if (error && error.code === 'PGRST116') {
-      // 用户不存在，尝试从pending_users获取信息创建
       const { data: pending } = await supabase
         .from('pending_users')
         .select('*')
         .eq('email', user.email)
         .single();
       
-      // 【修复问题3】尝试创建用户记录（需要RLS INSERT策略支持）
       const name = pending?.name || user.user_metadata?.name || user.email.split('@')[0];
       const role = pending?.role || user.user_metadata?.role || 'inspector';
       
       try {
         const { data: newUser, error: insertError } = await supabase
           .from('users')
-          .insert([{
-            id: user.id,
-            email: user.email,
-            name: name,
-            role: role,
-            approved: pending ? false : true // 如果在pending_users中找到则是待审批，否则自动审批
-          }])
+          .insert([{ id: user.id, email: user.email, name: name, role: role, approved: pending ? false : true }])
           .select()
           .single();
         
         if (!insertError && newUser) {
           currentUserProfile = newUser;
-        } else if (insertError) {
-          console.warn('创建用户记录失败:', insertError.message);
-          // 【修复问题3】INSERT失败时，构造临时profile用于降级显示
-          currentUserProfile = {
-            id: user.id,
-            email: user.email,
-            name: name,
-            role: role,
-            approved: !pending, // 如果有pending记录则未审批，否则假设已审批
-            created_at: new Date().toISOString()
-          };
+        } else {
+          currentUserProfile = { id: user.id, email: user.email, name: name, role: role, approved: !pending, created_at: new Date().toISOString() };
         }
       } catch (insertErr) {
-        console.warn('INSERT操作异常:', insertErr);
-        // 【修复问题3】异常时构造临时profile
-        currentUserProfile = {
-          id: user.id,
-          email: user.email,
-          name: name,
-          role: role,
-          approved: !pending,
-          created_at: new Date().toISOString()
-        };
+        currentUserProfile = { id: user.id, email: user.email, name: name, role: role, approved: !pending, created_at: new Date().toISOString() };
       }
     } else if (!error && data) {
       currentUserProfile = data;
-    } else if (error) {
-      console.warn('查询用户信息失败:', error.message);
-      // 【修复问题3】查询失败时构造临时profile
-      currentUserProfile = {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || user.email.split('@')[0],
-        role: user.user_metadata?.role || 'inspector',
-        approved: true,
-        created_at: user.created_at
-      };
+    } else {
+      currentUserProfile = { id: user.id, email: user.email, name: user.user_metadata?.name || user.email.split('@')[0], role: user.user_metadata?.role || 'inspector', approved: true, created_at: user.created_at };
     }
   } catch (err) {
-    console.error('loadUserProfile异常:', err);
-    // 【修复问题3】完全异常时用基本信息降级
-    currentUserProfile = {
-      id: user.id,
-      email: user.email,
-      name: user.user_metadata?.name || user.email.split('@')[0],
-      role: user.user_metadata?.role || 'inspector',
-      approved: true,
-      created_at: user.created_at
-    };
+    currentUserProfile = { id: user.id, email: user.email, name: user.user_metadata?.name || user.email.split('@')[0], role: user.user_metadata?.role || 'inspector', approved: true, created_at: user.created_at };
   }
 }
 
@@ -1418,39 +1327,44 @@ function showAuthPage() {
 }
 
 // ============================================
-// 显示应用
+// 显示应用（包含未审批提示）
 // ============================================
 async function showApp() {
   document.getElementById('authPage').classList.remove('active');
   document.getElementById('appContainer').classList.remove('hidden');
   
-  // 更新用户信息
   document.getElementById('homeUserName').textContent = currentUserProfile?.name || currentUser.email;
   document.getElementById('profileAvatar').textContent = getAvatar(currentUserProfile?.name || '用户');
   document.getElementById('profileName').textContent = currentUserProfile?.name || currentUser.email;
   document.getElementById('profileRole').textContent = currentUserProfile?.role === 'admin' ? '管理员' : '验收员';
   
-  // 【修复问题3】更新个人信息卡片
   updateProfileInfoCard();
   
   const now = new Date();
   document.getElementById('homeDate').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${getWeekday(now)}`;
   
-  // 管理员功能
+  // 【重要】只有role=admin才显示管理员功能
   if (currentUserProfile?.role === 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.add('show'));
     await loadPendingUsersCount();
+  } else {
+    document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('show'));
   }
   
+  // 【关键】未审批用户提示，但不踢回登录页
+  if (currentUserProfile?.approved === false) {
+    showToast('您的账号尚未通过管理员审批，功能可能受限', 'warning');
+  }
+  
+  hideSkeleton();
   switchTab('home');
   await loadData();
 }
 
 // ============================================
-// 【修复问题3】更新个人信息卡片（即使currentUserProfile为null也能显示）
+// 更新个人信息卡片
 // ============================================
 function updateProfileInfoCard() {
-  // 【修复问题3】不再检查null，而是用默认值
   const profile = currentUserProfile || {};
   const user = currentUser || {};
   
@@ -1458,34 +1372,28 @@ function updateProfileInfoCard() {
   document.getElementById('profileInfoName').textContent = profile.name || user.user_metadata?.name || user.email?.split('@')[0] || '-';
   document.getElementById('profileInfoRole').textContent = profile.role === 'admin' ? '管理员' : '验收员';
   
-  // 格式化注册时间
   if (profile.created_at || user.created_at) {
     const date = new Date(profile.created_at || user.created_at);
-    document.getElementById('profileCreatedAt').textContent = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    document.getElementById('profileCreatedAt').textContent = formatDate(date);
   } else {
     document.getElementById('profileCreatedAt').textContent = '-';
   }
   
-  // 审批状态
   const statusEl = document.getElementById('profileApprovedStatus');
   if (profile.approved === false) {
     statusEl.innerHTML = '<span class="status-badge pending">待审批</span>';
-  } else if (profile.approved === true) {
-    statusEl.innerHTML = '<span class="status-badge approved">已审批</span>';
   } else {
-    // 【修复问题3】当无法确定状态时，显示临时用户标识
-    statusEl.innerHTML = '<span class="status-badge approved">已同步</span>';
+    statusEl.innerHTML = '<span class="status-badge approved">已审批</span>';
   }
 }
 
-// ============================================
-// 【修复问题3】显示编辑个人信息弹窗（支持null状态）
-// ============================================
+function formatDate(date) {
+  return `${date.getMonth()+1}月${date.getDate()}日 ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+}
+
 function showEditProfileModal() {
-  // 【修复问题3】不再检查null，而是用默认值
   const profile = currentUserProfile || {};
   const user = currentUser || {};
-  
   document.getElementById('editProfileEmail').value = user.email || '';
   document.getElementById('editProfileName').value = profile.name || user.user_metadata?.name || '';
   document.getElementById('editProfileRole').value = profile.role === 'admin' ? '管理员' : '验收员';
@@ -1496,130 +1404,149 @@ function closeEditProfileModal() {
   document.getElementById('editProfileModal').classList.remove('show');
 }
 
-// ============================================
-// 【修复问题3】保存个人信息
-// ============================================
 async function saveProfile() {
   const newName = document.getElementById('editProfileName').value.trim();
+  if (!newName) { showToast('姓名不能为空', 'warning'); return; }
+  if (newName === currentUserProfile.name) { closeEditProfileModal(); return; }
   
-  if (!newName) {
-    showToast('姓名不能为空', 'warning');
-    return;
-  }
+  const { error } = await supabase.from('users').update({ name: newName }).eq('id', currentUser.id);
+  if (error) { showToast('保存失败: ' + error.message, 'error'); return; }
   
-  if (newName === currentUserProfile.name) {
-    closeEditProfileModal();
-    return;
-  }
-  
-  const { error } = await supabase
-    .from('users')
-    .update({ name: newName })
-    .eq('id', currentUser.id);
-  
-  if (error) {
-    showToast('保存失败: ' + error.message, 'error');
-    return;
-  }
-  
-  // 更新本地数据
   currentUserProfile.name = newName;
-  
-  // 更新UI
   document.getElementById('homeUserName').textContent = newName;
   document.getElementById('profileAvatar').textContent = getAvatar(newName);
   document.getElementById('profileName').textContent = newName;
   updateProfileInfoCard();
-  
   closeEditProfileModal();
   showToast('保存成功', 'success');
 }
 
-// ============================================
-// 获取头像
-// ============================================
 function getAvatar(name) {
   const avatars = ['👨', '👩', '👨‍💼', '👩‍💼', '👨‍🔧', '👩‍🔧', '👨‍💻', '👩‍💻', '👨‍🎓', '👩‍🎓'];
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
+  for (let i = 0; i < name.length; i++) { hash = name.charCodeAt(i) + ((hash << 5) - hash); }
   return avatars[Math.abs(hash) % avatars.length];
 }
 
-// ============================================
-// 获取星期
-// ============================================
 function getWeekday(date) {
   return ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][date.getDay()];
 }
 
-// ============================================
-// 设置事件监听
-// ============================================
+// 草稿管理
+function saveDraft() {
+  const draft = {
+    date: document.getElementById('formDate').value,
+    material: document.getElementById('formMaterial').value,
+    materialInput: document.getElementById('formMaterialInput').value,
+    supplier: document.getElementById('formSupplier').value,
+    truck: document.getElementById('formTruck').value,
+    desc: document.getElementById('formDesc').value,
+    inspector1: document.getElementById('formInspector1').value,
+    inspector2: document.getElementById('formInspector2').value,
+    timestamp: Date.now()
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function loadDraft() {
+  const saved = localStorage.getItem(DRAFT_KEY);
+  if (saved) {
+    try {
+      const draft = JSON.parse(saved);
+      if (Date.now() - draft.timestamp < 7 * 24 * 60 * 60 * 1000) {
+        document.getElementById('formDate').value = draft.date || '';
+        document.getElementById('formMaterial').value = draft.material || '';
+        document.getElementById('formMaterialInput').value = draft.materialInput || '';
+        document.getElementById('formSupplier').value = draft.supplier || '';
+        document.getElementById('formTruck').value = draft.truck || '';
+        document.getElementById('formDesc').value = draft.desc || '';
+        document.getElementById('formInspector1').value = draft.inspector1 || '';
+        document.getElementById('formInspector2').value = draft.inspector2 || '';
+        document.getElementById('charCount').textContent = (draft.desc || '').length;
+        if (draft.material) {
+          document.querySelectorAll('.material-tag').forEach(t => { t.classList.toggle('selected', t.dataset.material === draft.material); });
+        }
+        return true;
+      }
+    } catch (e) {}
+  }
+  return false;
+}
+
+function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
+
+function checkDraft() {
+  const saved = localStorage.getItem(DRAFT_KEY);
+  if (saved) {
+    try {
+      const draft = JSON.parse(saved);
+      if (Date.now() - draft.timestamp < 7 * 24 * 60 * 60 * 1000) {
+        document.getElementById('draftHint').classList.remove('hidden');
+        return true;
+      }
+    } catch (e) {}
+  }
+  return false;
+}
+
+// 事件监听
 function setupEventListeners() {
-  // 认证标签切换
   document.querySelectorAll('.auth-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      
       const tabName = tab.dataset.tab;
       document.getElementById('loginForm').classList.toggle('active', tabName === 'login');
       document.getElementById('registerForm').classList.toggle('active', tabName === 'register');
     });
   });
   
-  // 角色选择
-  document.querySelectorAll('.role-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-      document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
-      opt.classList.add('selected');
-    });
-  });
-  
-  // 登录表单
   document.getElementById('loginForm').addEventListener('submit', handleLogin);
-  
-  // 注册表单
   document.getElementById('registerForm').addEventListener('submit', handleRegister);
-  
-  // Tab切换
-  document.querySelectorAll('.tab-item').forEach(tab => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-  });
-  
-  // 提交按钮
+  document.querySelectorAll('.tab-item').forEach(tab => { tab.addEventListener('click', () => switchTab(tab.dataset.tab)); });
   document.getElementById('submitBtn').addEventListener('click', submitForm);
   
-  // 字符计数
   document.getElementById('formDesc').addEventListener('input', e => {
     document.getElementById('charCount').textContent = e.target.value.length;
+    saveDraft();
   });
   
-  // 筛选按钮
+  ['formDate', 'formMaterial', 'formMaterialInput', 'formSupplier', 'formTruck', 'formInspector1', 'formInspector2'].forEach(fieldId => {
+    const el = document.getElementById(fieldId);
+    if (el) { el.addEventListener('change', saveDraft); el.addEventListener('input', saveDraft); }
+  });
+  
   document.addEventListener('click', e => {
     if (e.target.classList.contains('filter-btn')) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
       currentFilter = e.target.dataset.filter;
+      currentPage = 1;
       renderRecords();
     }
   });
   
-  // 物料输入自动补全
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchKeyword = e.target.value.trim().toLowerCase();
+    currentPage = 1;
+    renderRecords();
+  });
+  
+  document.getElementById('prevPage').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderRecords(); } });
+  document.getElementById('nextPage').addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; renderRecords(); } });
+  
   document.getElementById('formMaterialInput').addEventListener('input', handleMaterialInput);
   document.getElementById('formMaterialInput').addEventListener('focus', handleMaterialInput);
   document.addEventListener('click', e => {
-    if (!e.target.closest('.material-input-wrapper')) {
-      document.getElementById('materialSuggestions').classList.remove('show');
-    }
+    if (!e.target.closest('.material-input-wrapper')) { document.getElementById('materialSuggestions').classList.remove('show'); }
+  });
+  
+  document.querySelectorAll('input, textarea').forEach(input => {
+    input.addEventListener('focus', () => { setTimeout(() => { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); });
   });
 }
 
-// ============================================
 // 登录
-// ============================================
 async function handleLogin(e) {
   e.preventDefault();
   const btn = document.getElementById('loginBtn');
@@ -1631,41 +1558,16 @@ async function handleLogin(e) {
   
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   
-  if (error) {
-    showToast(error.message, 'error');
-    btn.disabled = false;
-    btn.textContent = '登录';
-    return;
-  }
+  if (error) { showToast(error.message, 'error'); btn.disabled = false; btn.textContent = '登录'; return; }
   
-  // 【修复问题2】检查用户是否已审批，但不要直接signOut
   await loadUserProfile(data.user);
-  
-  // 【修复问题2】兜底：如果currentUserProfile仍为null，构造临时对象
-  if (!currentUserProfile) {
-    currentUserProfile = {
-      id: data.user.id,
-      email: data.user.email,
-      name: data.user.user_metadata?.name || data.user.email.split('@')[0],
-      role: data.user.user_metadata?.role || 'inspector',
-      approved: true,
-      created_at: data.user.created_at
-    };
-  }
-  
-  // 【修复问题2】如果用户未审批，显示警告但仍允许进入应用
-  if (!currentUserProfile.approved) {
-    showToast('您的账号尚未通过审批，部分功能可能受限', 'warning');
-    // 不signOut，直接显示应用
-  }
+  if (!currentUserProfile) { currentUserProfile = { id: data.user.id, email: data.user.email, name: data.user.user_metadata?.name || data.user.email.split('@')[0], role: data.user.user_metadata?.role || 'inspector', approved: true, created_at: data.user.created_at }; }
   
   btn.disabled = false;
   btn.textContent = '登录';
 }
 
-// ============================================
 // 注册
-// ============================================
 async function handleRegister(e) {
   e.preventDefault();
   const btn = document.getElementById('registerBtn');
@@ -1675,68 +1577,30 @@ async function handleRegister(e) {
   const name = document.getElementById('registerName').value;
   const email = document.getElementById('registerEmail').value;
   const password = document.getElementById('registerPassword').value;
-  const role = document.querySelector('.role-option.selected').dataset.role;
   
-  // 检查邮箱是否已存在
-  const { data: existing } = await supabase
-    .from('users')
-    .select('id')
-    .eq('email', email)
-    .single();
-  
-  if (existing) {
-    showToast('该邮箱已被注册', 'error');
-    btn.disabled = false;
-    btn.textContent = '注册';
-    return;
-  }
+  const { data: existing } = await supabase.from('users').select('id').eq('email', email).single();
+  if (existing) { showToast('该邮箱已被注册', 'error'); btn.disabled = false; btn.textContent = '注册'; return; }
   
   const { data, error } = await supabase.auth.signUp({ email, password });
-  
-  if (error) {
-    showToast(error.message, 'error');
-    btn.disabled = false;
-    btn.textContent = '注册';
-    return;
-  }
+  if (error) { showToast(error.message, 'error'); btn.disabled = false; btn.textContent = '注册'; return; }
   
   if (data.user) {
-    // 【修复问题1】同时往users表和pending_users表插入记录
-    const userId = data.user.id;
-    
-    // 1. 先往users表插入记录（approved=false表示待审批）
-    await supabase.from('users').insert([{ 
-      id: userId,
-      email: email, 
-      name: name, 
-      role: role,
-      approved: false
-    }]);
-    
-    // 2. 同时往pending_users表插入待审批记录
-    await supabase.from('pending_users').insert([{ email, name, password_hash: 'managed', role }]);
-    
+    await supabase.from('users').insert([{ id: data.user.id, email, name, role: 'inspector', approved: false }]);
+    await supabase.from('pending_users').insert([{ email, name, password_hash: 'managed', role: 'inspector' }]);
     showToast('注册成功，请等待管理员审批', 'success');
-    
-    // 切换到登录页面
     document.querySelector('.auth-tab[data-tab="login"]').click();
   }
-  
   btn.disabled = false;
   btn.textContent = '注册';
 }
 
-// ============================================
 // 退出登录
-// ============================================
 async function logout() {
   await supabase.auth.signOut();
   showToast('已退出登录');
 }
 
-// ============================================
 // Tab切换
-// ============================================
 async function switchTab(tabName) {
   document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
   document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
@@ -1745,68 +1609,39 @@ async function switchTab(tabName) {
   const pageMap = { home: 'homePage', form: 'formPage', records: 'recordsPage', profile: 'profilePage' };
   document.getElementById(pageMap[tabName]).classList.add('active');
   
-  // 【修复问题4】只在填报页显示提交按钮
   const formActions = document.querySelector('.form-actions');
-  if (formActions) {
-    formActions.classList.toggle('show', tabName === 'form');
-  }
+  if (formActions) { formActions.classList.toggle('show', tabName === 'form'); }
   
+  if (tabName === 'form') { loadDraft(); }
   if (tabName === 'home') await loadDashboardStats();
   else if (tabName === 'records') await loadRecords();
   else if (tabName === 'profile') await loadMyStats();
 }
 
-// ============================================
-// 加载数据
-// ============================================
-async function loadData() {
-  await Promise.all([loadMaterials(), loadRecords()]);
-  await loadDashboardStats();
-  await loadMyStats();
-}
+async function loadData() { await Promise.all([loadMaterials(), loadRecords()]); await loadDashboardStats(); await loadMyStats(); }
 
-// ============================================
-// 加载物料列表
-// ============================================
 async function loadMaterials() {
   const { data, error } = await supabase.from('materials').select('name').order('name');
-  if (!error && data) {
-    materials = data.map(m => m.name);
-    renderMaterialTags();
-  }
+  if (!error && data) { materials = data.map(m => m.name); renderMaterialTags(); }
 }
 
-// ============================================
-// 加载记录
-// ============================================
 async function loadRecords() {
   document.getElementById('recordsLoading').style.display = 'flex';
   document.getElementById('recordsTimeline').style.display = 'none';
   
   let query = supabase.from('records').select('*').order('created_at', { ascending: false });
-  
-  // 管理员可以看所有数据，其他用户只能看自己的
-  if (currentUserProfile?.role !== 'admin') {
-    query = query.eq('user_id', currentUser.id);
-  }
+  // 只有admin能看所有记录，其他用户只能看自己的
+  if (currentUserProfile?.role !== 'admin') { query = query.eq('user_id', currentUser.id); }
   
   const { data, error } = await query;
-  
-  if (error) {
-    showToast('加载记录失败', 'error');
-    return;
-  }
+  if (error) { showToast('加载记录失败', 'error'); document.getElementById('recordsLoading').style.display = 'none'; return; }
   
   records = data || [];
-  
   document.getElementById('recordsLoading').style.display = 'none';
   document.getElementById('recordsTimeline').style.display = 'block';
   renderRecords();
 }
 
-// ============================================
-// 加载仪表盘统计
-// ============================================
 async function loadDashboardStats() {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -1814,7 +1649,6 @@ async function loadDashboardStats() {
   
   let allRecords = records;
   if (currentUserProfile?.role === 'admin') {
-    // 管理员获取所有数据
     const { data } = await supabase.from('records').select('*');
     allRecords = data || [];
   }
@@ -1832,9 +1666,6 @@ async function loadDashboardStats() {
   renderCharts(allRecords);
 }
 
-// ============================================
-// 加载我的统计
-// ============================================
 async function loadMyStats() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -1845,171 +1676,80 @@ async function loadMyStats() {
   document.getElementById('myTotalCount').textContent = myRecords.length;
 }
 
-// ============================================
-// 加载待审批用户数量
-// ============================================
 async function loadPendingUsersCount() {
   const { data } = await supabase.from('pending_users').select('id');
   const count = data?.length || 0;
   const badge = document.getElementById('pendingBadge');
-  if (count > 0) {
-    badge.textContent = count;
-    badge.classList.remove('hidden');
-  } else {
-    badge.classList.add('hidden');
-  }
+  if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+  else { badge.classList.add('hidden'); }
 }
 
-// ============================================
-// 渲染物料标签
-// ============================================
 function renderMaterialTags() {
   const container = document.getElementById('materialTags');
-  container.innerHTML = materials.slice(0, 8).map(m => `
-    <div class="material-tag" data-material="${m}" onclick="selectMaterial(this)">${m}</div>
-  `).join('');
+  container.innerHTML = materials.slice(0, 8).map(m => `<div class="material-tag btn-touch" data-material="${m}" onclick="selectMaterial(this)">${m}</div>`).join('');
 }
 
-// ============================================
-// 选择物料
-// ============================================
 function selectMaterial(el) {
   document.querySelectorAll('.material-tag').forEach(t => t.classList.remove('selected'));
   el.classList.add('selected');
   document.getElementById('formMaterial').value = el.dataset.material;
   document.getElementById('formMaterialInput').value = el.dataset.material;
   document.getElementById('materialSuggestions').classList.remove('show');
+  saveDraft();
 }
 
-// ============================================
-// 物料输入处理
-// ============================================
 function handleMaterialInput(e) {
   const value = e.target.value.trim().toLowerCase();
   const suggestions = document.getElementById('materialSuggestions');
-  
-  if (!value) {
-    suggestions.classList.remove('show');
-    return;
-  }
+  if (!value) { suggestions.classList.remove('show'); return; }
   
   const matches = materials.filter(m => m.toLowerCase().includes(value));
-  
-  if (matches.length === 0) {
-    suggestions.innerHTML = `<div class="material-suggestion">按"${value}"新增</div>`;
-  } else {
-    suggestions.innerHTML = matches.map(m => {
-      const color = materialColors[m] || '#607d8b';
-      return `<div class="material-suggestion" onclick="selectSuggestion('${m}')"><span class="material-color" style="background:${color}"></span>${m}</div>`;
-    }).join('');
-  }
-  
+  if (matches.length === 0) { suggestions.innerHTML = `<div class="material-suggestion">按"${value}"新增</div>`; }
+  else { suggestions.innerHTML = matches.map(m => `<div class="material-suggestion" onclick="selectSuggestion('${m}')"><span class="material-color" style="background:${materialColors[m] || '#607d8b'}"></span>${m}</div>`).join(''); }
   suggestions.classList.add('show');
 }
 
-// ============================================
-// 选择建议项
-// ============================================
 function selectSuggestion(name) {
   document.getElementById('formMaterialInput').value = name;
   document.getElementById('formMaterial').value = name;
   document.getElementById('materialSuggestions').classList.remove('show');
-  
-  // 高亮对应标签
-  document.querySelectorAll('.material-tag').forEach(t => {
-    t.classList.toggle('selected', t.dataset.material === name);
-  });
+  document.querySelectorAll('.material-tag').forEach(t => { t.classList.toggle('selected', t.dataset.material === name); });
+  saveDraft();
 }
 
-// ============================================
-// 渲染图表
-// ============================================
-function renderCharts(allRecords) {
-  renderTrendChart(allRecords);
-  renderMaterialChart(allRecords);
-}
+function renderCharts(allRecords) { renderTrendChart(allRecords); renderMaterialChart(allRecords); }
 
-// ============================================
-// 渲染趋势图
-// ============================================
 function renderTrendChart(allRecords) {
   const ctx = document.getElementById('trendChart').getContext('2d');
   if (trendChart) trendChart.destroy();
-  
-  const days = [];
-  const counts = [];
+  const days = [], counts = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
+    const d = new Date(); d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
     days.push(`${d.getMonth()+1}/${d.getDate()}`);
     counts.push(allRecords.filter(r => r.date === dateStr).length);
   }
-  
   trendChart = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: days,
-      datasets: [{
-        label: '异常数',
-        data: counts,
-        borderColor: '#1a73e8',
-        backgroundColor: 'rgba(26, 115, 232, 0.1)',
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#1a73e8',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
-        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-      },
-      interaction: { intersect: false, mode: 'index' }
-    }
+    data: { labels: days, datasets: [{ label: '异常数', data: counts, borderColor: '#c62828', backgroundColor: 'rgba(198,40,40,0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#c62828', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } }, interaction: { intersect: false, mode: 'index' } }
   });
 }
 
-// ============================================
-// 渲染物料饼图
-// ============================================
 function renderMaterialChart(allRecords) {
   const ctx = document.getElementById('materialChart').getContext('2d');
   if (materialChart) materialChart.destroy();
-  
   const dist = {};
   allRecords.forEach(r => { dist[r.material_name] = (dist[r.material_name] || 0) + 1; });
-  
   const data = Object.entries(dist).map(([name, value]) => ({ name, value }));
   const colors = data.map(d => materialColors[d.name] || '#607d8b');
-  
   materialChart = new Chart(ctx, {
     type: 'doughnut',
-    data: {
-      labels: data.map(d => d.name),
-      datasets: [{ data: data.map(d => d.value), backgroundColor: colors, borderWidth: 0, hoverOffset: 10 }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '60%',
-      plugins: {
-        legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } }
-      }
-    }
+    data: { labels: data.map(d => d.name), datasets: [{ data: data.map(d => d.value), backgroundColor: colors, borderWidth: 0, hoverOffset: 10 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } } } }
   });
 }
 
-// ============================================
-// 提交表单
-// ============================================
 async function submitForm() {
   const date = document.getElementById('formDate').value;
   const materialInput = document.getElementById('formMaterialInput').value.trim();
@@ -2020,69 +1760,36 @@ async function submitForm() {
   const inspector1 = document.getElementById('formInspector1').value.trim();
   const inspector2 = document.getElementById('formInspector2').value.trim();
   
-  if (!date || !material || !supplier || !truck || !desc || !inspector1 || !inspector2) {
-    showToast('请填写完整信息', 'warning'); return;
-  }
+  if (!date || !material || !supplier || !truck || !desc || !inspector1 || !inspector2) { showToast('请填写完整信息', 'warning'); return; }
   if (inspector1 === inspector2) { showToast('两个验收员不能相同', 'warning'); return; }
   
-  // 【修复问题5】确保currentUserProfile存在，如果不存在则尝试重新加载
   if (!currentUserProfile) {
     showToast('正在加载用户信息...', 'warning');
-    if (currentUser) {
-      await loadUserProfile(currentUser);
-    }
-    if (!currentUserProfile) {
-      showToast('用户信息加载失败，请重新登录', 'error');
-      return;
-    }
+    if (currentUser) { await loadUserProfile(currentUser); }
+    if (!currentUserProfile) { showToast('用户信息加载失败，请重新登录', 'error'); return; }
   }
   
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.textContent = '提交中...';
   
-  // 添加新物料到数据库
-  if (material && !materials.includes(material)) {
-    await supabase.from('materials').insert([{ name: material }]);
-    materials.push(material);
-    renderMaterialTags();
-  }
+  if (material && !materials.includes(material)) { await supabase.from('materials').insert([{ name: material }]); materials.push(material); renderMaterialTags(); }
   
-  const record = {
-    user_id: currentUser.id,
-    date,
-    material_name: material,
-    supplier,
-    truck_no: truck,
-    abnormal_desc: desc,
-    inspector1,
-    inspector2,
-    created_by: currentUserProfile?.name || currentUser.email
-  };
-  
+  const record = { user_id: currentUser.id, date, material_name: material, supplier, truck_no: truck, abnormal_desc: desc, inspector1, inspector2, created_by: currentUserProfile?.name || currentUser.email };
   const { error } = await supabase.from('records').insert([record]);
   
-  if (error) {
-    showToast('提交失败: ' + error.message, 'error');
-    btn.disabled = false;
-    btn.textContent = '提交异常信息';
-    return;
-  }
+  if (error) { showToast('提交失败: ' + error.message, 'error'); btn.disabled = false; btn.textContent = '提交异常信息'; return; }
   
+  clearDraft();
   showSuccessAnimation();
   showToast('提交成功', 'success');
   resetForm();
-  
   btn.disabled = false;
   btn.textContent = '提交异常信息';
-  
   await loadData();
   switchTab('records');
 }
 
-// ============================================
-// 重置表单
-// ============================================
 function resetForm() {
   document.getElementById('formMaterial').value = '';
   document.getElementById('formMaterialInput').value = '';
@@ -2094,42 +1801,48 @@ function resetForm() {
   document.getElementById('charCount').textContent = '0';
   document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
   document.querySelectorAll('.material-tag').forEach(t => t.classList.remove('selected'));
+  document.getElementById('draftHint').classList.add('hidden');
 }
 
-// ============================================
-// 渲染记录列表
-// ============================================
 function renderRecords() {
   const container = document.getElementById('recordsList');
   const emptyState = document.getElementById('emptyState');
+  const pagination = document.getElementById('pagination');
   
   let filtered = records;
   const now = new Date();
+  if (currentFilter === 'week') { const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); filtered = records.filter(r => new Date(r.created_at) >= weekAgo); }
+  else if (currentFilter === 'month') { const monthStart = new Date(now.getFullYear(), now.getMonth(), 1); filtered = records.filter(r => new Date(r.created_at) >= monthStart); }
   
-  if (currentFilter === 'week') {
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    filtered = records.filter(r => new Date(r.created_at) >= weekAgo);
-  } else if (currentFilter === 'month') {
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    filtered = records.filter(r => new Date(r.created_at) >= monthStart);
-  }
+  if (searchKeyword) { filtered = filtered.filter(r => (r.material_name && r.material_name.toLowerCase().includes(searchKeyword)) || (r.supplier && r.supplier.toLowerCase().includes(searchKeyword)) || (r.abnormal_desc && r.abnormal_desc.toLowerCase().includes(searchKeyword))); }
   
-  if (filtered.length === 0) { container.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
+  totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  currentPage = Math.min(currentPage, totalPages);
+  const startIdx = (currentPage - 1) * PAGE_SIZE;
+  const pagedRecords = filtered.slice(startIdx, startIdx + PAGE_SIZE);
+  
+  if (filtered.length === 0) { container.innerHTML = ''; emptyState.classList.remove('hidden'); pagination.classList.add('hidden'); return; }
   emptyState.classList.add('hidden');
+  pagination.classList.remove('hidden');
   
+  document.getElementById('pageInfo').textContent = `${currentPage}/${totalPages}`;
+  document.getElementById('prevPage').disabled = currentPage <= 1;
+  document.getElementById('nextPage').disabled = currentPage >= totalPages;
+  
+  // 只有admin能编辑所有记录，其他用户只能编辑自己的
   const canEditAll = currentUserProfile?.role === 'admin';
   
-  container.innerHTML = filtered.map(record => {
+  container.innerHTML = pagedRecords.map(record => {
     const color = materialColors[record.material_name] || '#607d8b';
     const canEdit = canEditAll || record.user_id === currentUser?.id;
-    
+    const date = new Date(record.created_at);
     return `
       <div class="timeline-item">
         <div class="timeline-line"><div class="timeline-dot"></div><div class="timeline-track"></div></div>
         <div class="timeline-content">
           <div class="record-header">
             <span class="record-material" style="background:${color}">${record.material_name}</span>
-            <span class="record-date">${record.date}</span>
+            <span class="record-date">${formatDate(date)}</span>
             ${canEditAll ? `<span class="record-creator">${record.created_by}</span>` : ''}
           </div>
           <div class="record-body">
@@ -2143,7 +1856,7 @@ function renderRecords() {
               <div class="record-inspector-avatar" title="${record.inspector2}">${getAvatar(record.inspector2)}</div>
             </div>
             <div class="record-actions">
-              ${canEdit ? `<button class="record-action" onclick="editRecord('${record.id}')" title="编辑">✏️</button><button class="record-action delete" onclick="showDeleteConfirm('${record.id}')" title="删除">🗑️</button>` : ''}
+              ${canEdit ? `<button class="record-action btn-touch" onclick="editRecord('${record.id}')" title="编辑">✏️</button><button class="record-action delete btn-touch" onclick="showDeleteConfirm('${record.id}')" title="删除">🗑️</button>` : ''}
             </div>
           </div>
         </div>
@@ -2152,13 +1865,9 @@ function renderRecords() {
   }).join('');
 }
 
-// ============================================
-// 编辑记录
-// ============================================
 function editRecord(id) {
   const record = records.find(r => r.id === id);
   if (!record) return;
-  
   document.getElementById('editId').value = id;
   document.getElementById('editDate').value = record.date;
   document.getElementById('editMaterial').value = record.material_name;
@@ -2167,67 +1876,91 @@ function editRecord(id) {
   document.getElementById('editDesc').value = record.abnormal_desc;
   document.getElementById('editInspector1').value = record.inspector1;
   document.getElementById('editInspector2').value = record.inspector2;
-  
   document.getElementById('editModal').classList.add('show');
 }
 
 function closeEditModal() { document.getElementById('editModal').classList.remove('show'); }
 
-// ============================================
-// 保存编辑
-// ============================================
 async function saveEdit() {
   const id = document.getElementById('editId').value;
-  
-  const updates = {
-    date: document.getElementById('editDate').value,
-    material_name: document.getElementById('editMaterial').value,
-    supplier: document.getElementById('editSupplier').value,
-    truck_no: document.getElementById('editTruck').value,
-    abnormal_desc: document.getElementById('editDesc').value,
-    inspector1: document.getElementById('editInspector1').value,
-    inspector2: document.getElementById('editInspector2').value,
-    updated_at: new Date().toISOString()
-  };
-  
+  const updates = { date: document.getElementById('editDate').value, material_name: document.getElementById('editMaterial').value, supplier: document.getElementById('editSupplier').value, truck_no: document.getElementById('editTruck').value, abnormal_desc: document.getElementById('editDesc').value, inspector1: document.getElementById('editInspector1').value, inspector2: document.getElementById('editInspector2').value, updated_at: new Date().toISOString() };
   const { error } = await supabase.from('records').update(updates).eq('id', id);
-  
-  if (error) {
-    showToast('保存失败', 'error');
-    return;
-  }
-  
+  if (error) { showToast('保存失败', 'error'); return; }
   closeEditModal();
   showToast('保存成功', 'success');
   await loadRecords();
   await loadDashboardStats();
 }
 
-// ============================================
-// 删除记录
-// ============================================
 function showDeleteConfirm(id) { deleteTargetId = id; document.getElementById('deleteModal').classList.add('show'); }
 function closeDeleteModal() { deleteTargetId = null; document.getElementById('deleteModal').classList.remove('show'); }
 
 async function confirmDelete() {
   if (!deleteTargetId) return;
-  
   const { error } = await supabase.from('records').delete().eq('id', deleteTargetId);
-  
-  if (error) {
-    showToast('删除失败', 'error');
-    return;
-  }
-  
+  if (error) { showToast('删除失败', 'error'); return; }
   closeDeleteModal();
   showToast('删除成功', 'success');
   await loadRecords();
   await loadDashboardStats();
 }
 
-// ============================================
-// 导出模态框
-// ============================================
+// 审批用户
+function showApproveModal(pendingId, email, name) {
+  approvePendingId = pendingId;
+  approveEmail = email;
+  approveName = name;
+  selectedApproveRole = 'inspector';
+  document.getElementById('approveUserName').textContent = name;
+  document.getElementById('approveUserEmail').textContent = email;
+  document.querySelectorAll('#approveModal .role-option').forEach(opt => { opt.classList.remove('selected'); if (opt.dataset.role === 'inspector') { opt.classList.add('selected'); } });
+  document.getElementById('approveModal').classList.add('show');
+}
+
+function selectApproveRole(el) {
+  document.querySelectorAll('#approveModal .role-option').forEach(opt => opt.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedApproveRole = el.dataset.role;
+}
+
+function closeApproveModal() { document.getElementById('approveModal').classList.remove('show'); approvePendingId = null; approveEmail = null; approveName = null; }
+
+async function confirmApprove() {
+  if (!approvePendingId) return;
+  const { data: pendingUser } = await supabase.from('pending_users').select('*').eq('id', approvePendingId).single();
+  if (!pendingUser) { showToast('用户信息不存在', 'error'); return; }
+  
+  const { error: upsertError } = await supabase.from('users').upsert([{ id: pendingUser.id || crypto.randomUUID(), email: approveEmail, name: approveName, role: selectedApproveRole, approved: true }]);
+  if (upsertError) { showToast('审批失败: ' + upsertError.message, 'error'); return; }
+  
+  await supabase.from('pending_users').delete().eq('id', approvePendingId);
+  closeApproveModal();
+  showToast(`已批准 ${approveName} 为${selectedApproveRole === 'admin' ? '管理员' : '验收员'}`, 'success');
+  await loadPendingUsersCount();
+  showUserManagement();
+}
+
+// 切换用户角色
+async function switchUserRole(userId, currentRole) {
+  const newRole = currentRole === 'admin' ? 'inspector' : 'admin';
+  const roleName = newRole === 'admin' ? '管理员' : '验收员';
+  const { error } = await supabase.from('users').update({ role: newRole }).eq('id', userId);
+  if (error) { showToast('修改角色失败: ' + error.message, 'error'); return; }
+  showToast(`已将角色修改为${roleName}`, 'success');
+  
+  // 如果修改的是当前用户自己，更新本地状态
+  if (userId === currentUser?.id) {
+    currentUserProfile.role = newRole;
+    document.getElementById('profileRole').textContent = roleName;
+    document.getElementById('profileInfoRole').textContent = roleName;
+    // 更新管理员功能可见性
+    if (newRole === 'admin') { document.querySelectorAll('.admin-only').forEach(el => el.classList.add('show')); }
+    else { document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('show')); }
+  }
+  showUserManagement();
+}
+
+// 导出
 function showExportModal() { document.getElementById('exportModal').classList.add('show'); }
 function closeExportModal() { document.getElementById('exportModal').classList.remove('show'); }
 
@@ -2238,187 +1971,107 @@ function selectExportOption(el, value) {
   document.getElementById('exportDateRange').classList.toggle('show', value === 'custom');
 }
 
-// ============================================
-// 导出Excel
-// ============================================
 async function doExport() {
   const period = document.querySelector('input[name="exportPeriod"]:checked').value;
-  
   let filtered = records;
   const now = new Date();
+  if (currentUserProfile?.role === 'admin') { const { data } = await supabase.from('records').select('*').order('created_at', { ascending: false }); filtered = data || []; }
   
-  // 管理员导出所有数据，其他用户导出自己的
-  if (currentUserProfile?.role === 'admin') {
-    const { data } = await supabase.from('records').select('*').order('created_at', { ascending: false });
-    filtered = data || [];
-  }
-  
-  if (period === 'week') {
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    filtered = filtered.filter(r => new Date(r.created_at) >= weekAgo);
-  } else if (period === 'month') {
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    filtered = filtered.filter(r => new Date(r.created_at) >= monthStart);
-  } else if (period === 'custom') {
-    const start = document.getElementById('exportStartDate').value;
-    const end = document.getElementById('exportEndDate').value;
-    if (start && end) {
-      filtered = filtered.filter(r => r.date >= start && r.date <= end);
-    }
-  }
+  if (period === 'week') { const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); filtered = filtered.filter(r => new Date(r.created_at) >= weekAgo); }
+  else if (period === 'month') { const monthStart = new Date(now.getFullYear(), now.getMonth(), 1); filtered = filtered.filter(r => new Date(r.created_at) >= monthStart); }
+  else if (period === 'custom') { const start = document.getElementById('exportStartDate').value; const end = document.getElementById('exportEndDate').value; if (start && end) { filtered = filtered.filter(r => r.date >= start && r.date <= end); } }
   
   if (filtered.length === 0) { showToast('没有可导出的数据', 'warning'); return; }
   
   const data = filtered.map(r => [r.date, r.material_name, r.supplier, r.truck_no, r.abnormal_desc, r.inspector1, r.inspector2]);
-  
-  const ws = XLSX.utils.aoa_to_sheet([
-    ['日期', '物料名称', '供货单位', '车号', '异常情况', '验收员1', '验收员2'],
-    ...data
-  ]);
-  
+  const ws = XLSX.utils.aoa_to_sheet([['日期', '物料名称', '供货单位', '车号', '异常情况', '验收员1', '验收员2'], ...data]);
   ws['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 25 }, { wch: 14 }, { wch: 40 }, { wch: 10 }, { wch: 10 }];
-  
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '异常记录');
-  
-  const filename = `异常记录_${new Date().toISOString().split('T')[0]}.xlsx`;
-  XLSX.writeFile(wb, filename);
-  
+  XLSX.writeFile(wb, `异常记录_${new Date().toISOString().split('T')[0]}.xlsx`);
   closeExportModal();
   showToast(`已导出${filtered.length}条记录`, 'success');
 }
 
-// ============================================
 // 用户管理
-// ============================================
 async function showUserManagement() {
-  if (currentUserProfile?.role !== 'admin') return;
+  // 【重要】只有admin能访问用户管理
+  if (currentUserProfile?.role !== 'admin') { showToast('无权访问', 'error'); return; }
   
-  // 加载待审批用户
   const { data: pendingUsers } = await supabase.from('pending_users').select('*').order('created_at', { ascending: false });
-  
-  // 加载已注册用户
   const { data: users } = await supabase.from('users').select('*').order('created_at', { ascending: false });
   
-  // 渲染待审批列表
   const pendingContainer = document.getElementById('pendingUserList');
   if (pendingUsers && pendingUsers.length > 0) {
     pendingContainer.innerHTML = pendingUsers.map(u => `
       <div class="user-item">
         <div class="avatar">${getAvatar(u.name)}</div>
-        <div class="info">
-          <div class="name">${u.name} <span class="role-badge ${u.role}">${u.role === 'admin' ? '管理员' : '验收员'}</span></div>
-          <div class="meta">${u.email}</div>
-        </div>
+        <div class="info"><div class="name">${u.name}</div><div class="meta">${u.email}</div></div>
         <div class="actions">
-          <button class="action-btn approve-btn" onclick="approveUser('${u.id}', '${u.email}', '${u.name}', '${u.role}')">批准</button>
-          <button class="action-btn reject-btn" onclick="rejectPendingUser('${u.id}')">拒绝</button>
+          <button class="action-btn approve-btn btn-touch" onclick="showApproveModal('${u.id}', '${u.email}', '${u.name}')">批准</button>
+          <button class="action-btn reject-btn btn-touch" onclick="rejectPendingUser('${u.id}')">拒绝</button>
         </div>
       </div>
     `).join('');
-  } else {
-    pendingContainer.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;">暂无待审批用户</div>';
-  }
+  } else { pendingContainer.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;">暂无待审批用户 ✓</div>'; }
   
-  // 渲染用户列表
   const userContainer = document.getElementById('userList');
   if (users && users.length > 0) {
-    userContainer.innerHTML = users.map(u => `
-      <div class="user-item">
-        <div class="avatar">${getAvatar(u.name)}</div>
-        <div class="info">
-          <div class="name">${u.name} <span class="role-badge ${u.role}">${u.role === 'admin' ? '管理员' : '验收员'}</span></div>
-          <div class="meta">${u.email}</div>
+    userContainer.innerHTML = users.map(u => {
+      const isAdmin = u.role === 'admin';
+      const isSelf = u.id === currentUser?.id;
+      const roleLabel = isAdmin ? '管理员' : '验收员';
+      const switchRoleLabel = isAdmin ? '降为验收员' : '升为管理员';
+      
+      return `
+        <div class="user-item">
+          <div class="avatar">${getAvatar(u.name)}</div>
+          <div class="info">
+            <div class="name">${u.name}${isSelf ? '<span style="color:#c62828;font-size:11px;">(我)</span>' : ''}</div>
+            <div class="meta">${u.email}</div>
+          </div>
+          <div><span class="role-badge ${u.role}">${roleLabel}</span></div>
+          <div class="actions">
+            ${!isSelf ? `<button class="action-btn role-switch-btn btn-touch" onclick="switchUserRole('${u.id}', '${u.role}')">${switchRoleLabel}</button>` : ''}
+            ${!isSelf && !u.approved ? `<button class="action-btn approve-btn btn-touch" onclick="approveExistingUser('${u.id}')">批准</button>` : ''}
+            ${!isSelf ? `<button class="action-btn delete-btn btn-touch" onclick="deleteUser('${u.id}')">删除</button>` : ''}
+          </div>
         </div>
-        ${u.approved ? '<span class="approved-badge">已审批</span>' : '<span class="pending-badge">待审批</span>'}
-        <div class="actions">
-          ${!u.approved ? `<button class="action-btn approve-btn" onclick="approveExistingUser('${u.id}')">批准</button>` : ''}
-          <button class="action-btn delete-btn" onclick="deleteUser('${u.id}')">删除</button>
-        </div>
-      </div>
-    `).join('');
-  } else {
-    userContainer.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;">暂无用户</div>';
-  }
+      `;
+    }).join('');
+  } else { userContainer.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;">暂无已注册用户</div>'; }
   
   document.getElementById('userModal').classList.add('show');
 }
 
 function closeUserModal() { document.getElementById('userModal').classList.remove('show'); }
 
-async function approveUser(pendingId, email, name, role) {
-  // 创建用户记录
-  const { data: user, error } = await supabase.auth.admin.createUser({
-    email,
-    email_confirm: true,
-    user_metadata: { name, role }
-  });
-  
-  if (error) {
-    // 如果Supabase Admin API不可用，手动创建
-    showToast('正在创建用户...', 'warning');
-  }
-  
-  // 更新users表
-  if (user?.user) {
-    await supabase.from('users').upsert([{
-      id: user.user.id,
-      email,
-      name,
-      role,
-      approved: true
-    }]);
-  }
-  
-  // 删除pending记录
-  await supabase.from('pending_users').delete().eq('id', pendingId);
-  
-  showToast('已批准用户注册', 'success');
-  await loadPendingUsersCount();
-  showUserManagement();
-}
+async function rejectPendingUser(id) { await supabase.from('pending_users').delete().eq('id', id); showToast('已拒绝', 'success'); await loadPendingUsersCount(); showUserManagement(); }
 
-async function rejectPendingUser(id) {
-  await supabase.from('pending_users').delete().eq('id', id);
-  showToast('已拒绝', 'success');
-  await loadPendingUsersCount();
-  showUserManagement();
-}
+async function approveExistingUser(id) { await supabase.from('users').update({ approved: true, role: 'inspector' }).eq('id', id); showToast('已批准', 'success'); await loadPendingUsersCount(); showUserManagement(); }
 
-async function approveExistingUser(id) {
-  await supabase.from('users').update({ approved: true }).eq('id', id);
-  showToast('已批准', 'success');
-  await loadPendingUsersCount();
-  showUserManagement();
-}
+async function deleteUser(id) { if (id === currentUser?.id) { showToast('不能删除自己', 'error'); return; } await supabase.from('users').delete().eq('id', id); showToast('已删除', 'success'); await loadPendingUsersCount(); showUserManagement(); }
 
-async function deleteUser(id) {
-  if (id === currentUser?.id) {
-    showToast('不能删除自己', 'error');
-    return;
-  }
-  
-  await supabase.from('users').delete().eq('id', id);
-  showToast('已删除', 'success');
-  await loadPendingUsersCount();
-  showUserManagement();
-}
-
-// ============================================
-// 关于模态框
-// ============================================
 function showAboutModal() { document.getElementById('aboutModal').classList.add('show'); }
 function closeAboutModal() { document.getElementById('aboutModal').classList.remove('show'); }
 
-// ============================================
-// 页面加载完成后初始化
-// ============================================
+function shareToColleague() {
+  const url = window.location.href;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => { showToast('链接已复制到剪贴板', 'success'); }).catch(() => { showToast('复制失败，请手动复制', 'warning'); });
+  } else {
+    const textarea = document.createElement('textarea'); textarea.value = url; textarea.style.position = 'fixed'; textarea.style.opacity = '0';
+    document.body.appendChild(textarea); textarea.select();
+    try { document.execCommand('copy'); showToast('链接已复制到剪贴板', 'success'); } catch (err) { showToast('复制失败，请手动复制', 'warning'); }
+    document.body.removeChild(textarea);
+  }
+}
+
+const materialColors = { '钒铁': '#e91e63', '钼铁': '#9c27b0', '铝块': '#2196f3', '铝粒': '#00bcd4', '钒氮合金': '#ff9800', '钛铁': '#4caf50', '铌铁': '#795548', '硼铁': '#607d8b' };
+
 document.addEventListener('DOMContentLoaded', init);
 
-// 注册Service Worker
-if ('serviceWorker' in navigator && isConfigured) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+if ('serviceWorker' in navigator && isConfigured) { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 </script>
 </body>
 </html>
