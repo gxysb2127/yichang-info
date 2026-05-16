@@ -15,7 +15,7 @@
   <meta property="og:type" content="website">
   
   <title>异常信息填报系统 V3</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=6">
   <link rel="icon" href="logo.png">
   <link rel="apple-touch-icon" href="logo.png">
   
@@ -616,7 +616,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
   </div>
 
   <!-- 认证页 -->
-  <div id="authPage" class="page auth-page">
+  <div id="authPage" class="page auth-page" style="display:none;">
     <div class="auth-header">
       <div class="auth-logo">
         <img src="logo.png" alt="Logo">
@@ -1322,7 +1322,7 @@ async function loadUserProfile(user) {
 // 显示认证页
 // ============================================
 function showAuthPage() {
-  document.getElementById('authPage').classList.add('active');
+  document.getElementById('authPage').style.display = 'flex';
   document.getElementById('appContainer').classList.add('hidden');
 }
 
@@ -1330,7 +1330,7 @@ function showAuthPage() {
 // 显示应用（包含未审批提示）
 // ============================================
 async function showApp() {
-  document.getElementById('authPage').classList.remove('active');
+  document.getElementById('authPage').style.display = 'none';
   document.getElementById('appContainer').classList.remove('hidden');
   
   document.getElementById('homeUserName').textContent = currentUserProfile?.name || currentUser.email;

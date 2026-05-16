@@ -1,5 +1,5 @@
 // Service Worker for 异常信息填报系统 V3
-const CACHE_NAME = 'yichang-info-v3';
+const CACHE_NAME = 'yichang-info-v6';
 const urlsToCache = [
   '/',
   '/index.html',
