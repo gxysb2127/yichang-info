@@ -602,7 +602,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
     </div>
     
     <div class="auth-card">
-      <div id="configHint" class="config-hint">
+      <div id="configHint" class="config-hint hidden">
         📋 请先配置 Supabase 连接：<br>
         在代码顶部找到 SUPABASE_URL 和 SUPABASE_ANON_KEY，填入你的项目配置。
       </div>
@@ -1086,14 +1086,22 @@ function showSuccessAnimation() {
 // 初始化
 // ============================================
 async function init() {
-  if (!isConfigured) {
+  if (!isConfigured || typeof window.supabase === 'undefined') {
     document.getElementById('configHint').classList.remove('hidden');
     document.getElementById('configBanner').classList.remove('hidden');
     showAuthPage();
     return;
   }
   
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch(e) {
+    console.error('Supabase初始化失败:', e);
+    document.getElementById('configHint').classList.remove('hidden');
+    document.getElementById('configBanner').classList.remove('hidden');
+    showAuthPage();
+    return;
+  }
   
   // 检查登录状态
   const { data: { session } } = await supabase.auth.getSession();
