@@ -1966,8 +1966,8 @@ async function confirmApprove() {
   
   let upsertError = null;
   if (existingUser) {
-    // 已有记录，更新角色和审批状态
-    const { error } = await supabase.from('users').update({ role: selectedApproveRole, approved: true }).eq('id', existingUser.id);
+    // 已有记录，更新名字、角色和审批状态（把pending_users里的真名同步过去）
+    const { error } = await supabase.from('users').update({ name: approveName, role: selectedApproveRole, approved: true }).eq('id', existingUser.id);
     upsertError = error;
   } else {
     // 没有记录，需要插入。但不能用pendingUser.id（那是pending表的主键，不是auth uid）
