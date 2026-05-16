@@ -433,6 +433,99 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 16px; border: 4px solid rgba(255,255,255,0.3); box-shadow: var(--shadow-lg); }
 .profile-name { font-size: 22px; font-weight: 600; color: white; margin-bottom: 4px; }
 .profile-role { font-size: 14px; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.2); padding: 4px 16px; border-radius: var(--radius-full); display: inline-block; }
+
+/* 个人信息卡片 */
+.profile-info-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  margin: -24px 16px 16px;
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.profile-info-header {
+  background: linear-gradient(135deg, #e8f0fe 0%, #f0f4ff 100%);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+}
+.profile-info-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.profile-info-header h3::before {
+  content: '';
+  width: 4px;
+  height: 14px;
+  background: var(--gradient-primary);
+  border-radius: 2px;
+}
+.profile-edit-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.profile-edit-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+.profile-info-list {
+  padding: 8px 0;
+}
+.profile-info-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.profile-info-item:last-child {
+  border-bottom: none;
+}
+.profile-info-item .info-label {
+  width: 80px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.profile-info-item .info-value {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.profile-info-item .info-value.readonly {
+  color: var(--text-secondary);
+}
+.profile-info-item .info-value .status-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+.profile-info-item .info-value .status-badge.pending {
+  background: #fff3e0;
+  color: #e65100;
+}
+.profile-info-item .info-value .status-badge.approved {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
 .profile-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: -24px 16px 16px; position: relative; z-index: 1; }
 .profile-stat-card { background: white; border-radius: var(--radius-lg); padding: 20px; text-align: center; box-shadow: var(--shadow-md); }
 .profile-stat-value { font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
@@ -806,6 +899,36 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
         <span id="profileRole" class="profile-role">验收员</span>
       </div>
       
+      <!-- 【修复问题3】个人信息卡片 -->
+      <div class="profile-info-card">
+        <div class="profile-info-header">
+          <h3>个人信息</h3>
+          <button class="profile-edit-btn" onclick="showEditProfileModal()">✏️ 修改</button>
+        </div>
+        <div class="profile-info-list">
+          <div class="profile-info-item">
+            <span class="info-label">邮箱</span>
+            <span id="profileEmail" class="info-value readonly">-</span>
+          </div>
+          <div class="profile-info-item">
+            <span class="info-label">姓名</span>
+            <span id="profileInfoName" class="info-value">-</span>
+          </div>
+          <div class="profile-info-item">
+            <span class="info-label">角色</span>
+            <span id="profileInfoRole" class="info-value readonly">-</span>
+          </div>
+          <div class="profile-info-item">
+            <span class="info-label">注册时间</span>
+            <span id="profileCreatedAt" class="info-value readonly">-</span>
+          </div>
+          <div class="profile-info-item">
+            <span class="info-label">审批状态</span>
+            <span id="profileApprovedStatus" class="info-value readonly">-</span>
+          </div>
+        </div>
+      </div>
+      
       <div class="profile-stats">
         <div class="profile-stat-card">
           <div id="myMonthCount" class="profile-stat-value">-</div>
@@ -1033,6 +1156,34 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
     </div>
   </div>
 
+  <!-- ========== 编辑个人信息模态框 ========== -->
+  <div id="editProfileModal" class="modal-overlay" onclick="if(event.target===this)closeEditProfileModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>修改个人信息</h3>
+        <button class="modal-close" onclick="closeEditProfileModal()">×</button>
+      </div>
+      <div class="modal-body edit-form">
+        <div class="form-group">
+          <label class="form-label">邮箱（不可修改）</label>
+          <input type="email" id="editProfileEmail" class="form-input" readonly style="background:#f5f5f5;color:var(--text-secondary);">
+        </div>
+        <div class="form-group">
+          <label class="form-label">姓名</label>
+          <input type="text" id="editProfileName" class="form-input" placeholder="请输入姓名" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">角色（不可修改）</label>
+          <input type="text" id="editProfileRole" class="form-input" readonly style="background:#f5f5f5;color:var(--text-secondary);">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel" onclick="closeEditProfileModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveProfile()">保存</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 // ============================================
 // 配置区域 - 请填入你的Supabase项目配置
@@ -1143,30 +1294,31 @@ async function loadUserProfile(user) {
     .single();
   
   if (error && error.code === 'PGRST116') {
-    // 用户不存在，尝试从pending_users获取信息
+    // 用户不存在，尝试从pending_users获取信息创建
     const { data: pending } = await supabase
       .from('pending_users')
       .select('*')
       .eq('email', user.email)
       .single();
     
-    if (pending) {
-      // 创建用户记录
-      const { data: newUser, error: insertError } = await supabase
-        .from('users')
-        .insert([{
-          id: user.id,
-          email: user.email,
-          name: pending.name,
-          role: pending.role,
-          approved: false
-        }])
-        .select()
-        .single();
-      
-      if (!insertError && newUser) {
-        currentUserProfile = newUser;
-      }
+    // 尝试创建用户记录
+    const name = pending?.name || user.user_metadata?.name || user.email.split('@')[0];
+    const role = pending?.role || user.user_metadata?.role || 'inspector';
+    
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert([{
+        id: user.id,
+        email: user.email,
+        name: name,
+        role: role,
+        approved: pending ? false : true // 如果在pending_users中找到则是待审批，否则自动审批
+      }])
+      .select()
+      .single();
+    
+    if (!insertError && newUser) {
+      currentUserProfile = newUser;
     }
   } else if (!error && data) {
     currentUserProfile = data;
@@ -1194,6 +1346,9 @@ async function showApp() {
   document.getElementById('profileName').textContent = currentUserProfile?.name || currentUser.email;
   document.getElementById('profileRole').textContent = currentUserProfile?.role === 'admin' ? '管理员' : '验收员';
   
+  // 【修复问题3】更新个人信息卡片
+  updateProfileInfoCard();
+  
   const now = new Date();
   document.getElementById('homeDate').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${getWeekday(now)}`;
   
@@ -1205,6 +1360,91 @@ async function showApp() {
   
   switchTab('home');
   await loadData();
+}
+
+// ============================================
+// 【修复问题3】更新个人信息卡片
+// ============================================
+function updateProfileInfoCard() {
+  if (!currentUserProfile) return;
+  
+  document.getElementById('profileEmail').textContent = currentUser?.email || '-';
+  document.getElementById('profileInfoName').textContent = currentUserProfile.name || '-';
+  document.getElementById('profileInfoRole').textContent = currentUserProfile.role === 'admin' ? '管理员' : '验收员';
+  
+  // 格式化注册时间
+  if (currentUserProfile.created_at) {
+    const date = new Date(currentUserProfile.created_at);
+    document.getElementById('profileCreatedAt').textContent = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  } else {
+    document.getElementById('profileCreatedAt').textContent = '-';
+  }
+  
+  // 审批状态
+  const statusEl = document.getElementById('profileApprovedStatus');
+  if (currentUserProfile.approved) {
+    statusEl.innerHTML = '<span class="status-badge approved">已审批</span>';
+  } else {
+    statusEl.innerHTML = '<span class="status-badge pending">待审批</span>';
+  }
+}
+
+// ============================================
+// 【修复问题3】显示编辑个人信息弹窗
+// ============================================
+function showEditProfileModal() {
+  if (!currentUserProfile) {
+    showToast('用户信息加载中，请稍后', 'warning');
+    return;
+  }
+  
+  document.getElementById('editProfileEmail').value = currentUser?.email || '';
+  document.getElementById('editProfileName').value = currentUserProfile.name || '';
+  document.getElementById('editProfileRole').value = currentUserProfile.role === 'admin' ? '管理员' : '验收员';
+  document.getElementById('editProfileModal').classList.add('show');
+}
+
+function closeEditProfileModal() {
+  document.getElementById('editProfileModal').classList.remove('show');
+}
+
+// ============================================
+// 【修复问题3】保存个人信息
+// ============================================
+async function saveProfile() {
+  const newName = document.getElementById('editProfileName').value.trim();
+  
+  if (!newName) {
+    showToast('姓名不能为空', 'warning');
+    return;
+  }
+  
+  if (newName === currentUserProfile.name) {
+    closeEditProfileModal();
+    return;
+  }
+  
+  const { error } = await supabase
+    .from('users')
+    .update({ name: newName })
+    .eq('id', currentUser.id);
+  
+  if (error) {
+    showToast('保存失败: ' + error.message, 'error');
+    return;
+  }
+  
+  // 更新本地数据
+  currentUserProfile.name = newName;
+  
+  // 更新UI
+  document.getElementById('homeUserName').textContent = newName;
+  document.getElementById('profileAvatar').textContent = getAvatar(newName);
+  document.getElementById('profileName').textContent = newName;
+  updateProfileInfoCard();
+  
+  closeEditProfileModal();
+  showToast('保存成功', 'success');
 }
 
 // ============================================
@@ -1363,8 +1603,21 @@ async function handleRegister(e) {
   }
   
   if (data.user) {
-    // 在pending_users表中创建记录
+    // 【修复问题1】同时往users表和pending_users表插入记录
+    const userId = data.user.id;
+    
+    // 1. 先往users表插入记录（approved=false表示待审批）
+    await supabase.from('users').insert([{ 
+      id: userId,
+      email: email, 
+      name: name, 
+      role: role,
+      approved: false
+    }]);
+    
+    // 2. 同时往pending_users表插入待审批记录
     await supabase.from('pending_users').insert([{ email, name, password_hash: 'managed', role }]);
+    
     showToast('注册成功，请等待管理员审批', 'success');
     
     // 切换到登录页面
@@ -1667,6 +1920,15 @@ async function submitForm() {
     showToast('请填写完整信息', 'warning'); return;
   }
   if (inspector1 === inspector2) { showToast('两个验收员不能相同', 'warning'); return; }
+  
+  // 【修复问题1】确保currentUserProfile存在，如果不存在则尝试创建
+  if (!currentUserProfile) {
+    await loadUserProfile(currentUser);
+    if (!currentUserProfile) {
+      showToast('用户信息加载失败，请重新登录', 'error');
+      return;
+    }
+  }
   
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
