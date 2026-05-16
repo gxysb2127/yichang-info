@@ -1961,7 +1961,24 @@ async function confirmApprove() {
   const { data: pendingUser } = await supabase.from('pending_users').select('*').eq('id', approvePendingId).single();
   if (!pendingUser) { showToast('用户信息不存在', 'error'); return; }
   
-  const { error: upsertError } = await supabase.from('users').upsert([{ id: pendingUser.id || crypto.randomUUID(), email: approveEmail, name: approveName, role: selectedApproveRole, approved: true }]);
+  // 审批逻辑：通过email查找public.users是否已有记录
+  const { data: existingUser } = await supabase.from('users').select('*').eq('email', approveEmail).single();
+  
+  let upsertError = null;
+  if (existingUser) {
+    // 已有记录，更新角色和审批状态
+    const { error } = await supabase.from('users').update({ role: selectedApproveRole, approved: true }).eq('id', existingUser.id);
+    upsertError = error;
+  } else {
+    // 没有记录，需要插入。但不能用pendingUser.id（那是pending表的主键，不是auth uid）
+    // 先检查是否已注册（auth.users里有但public.users没有）
+    // 这种情况下用户注册时INSERT到users表可能失败了，需要用auth uid
+    // 无法直接获取auth uid，所以先插入不带id，让数据库生成
+    // 但users表的id是外键引用auth.users，必须匹配
+    // 临时方案：标记为已审批，等用户下次登录时loadUserProfile会自动创建
+    upsertError = { message: '用户尚未完成注册登录，请让该用户先登录一次系统后再审批' };
+  }
+  
   if (upsertError) { showToast('审批失败: ' + upsertError.message, 'error'); return; }
   
   await supabase.from('pending_users').delete().eq('id', approvePendingId);
