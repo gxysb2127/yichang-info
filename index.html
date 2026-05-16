@@ -1773,12 +1773,24 @@ async function submitForm() {
   btn.disabled = true;
   btn.textContent = '提交中...';
   
-  if (material && !materials.includes(material)) { await supabase.from('materials').insert([{ name: material }]); materials.push(material); renderMaterialTags(); }
+  // 添加新物料（容错：如果已存在忽略错误）
+  if (material && !materials.includes(material)) {
+    const { error: matErr } = await supabase.from('materials').insert([{ name: material }]);
+    if (!matErr) { materials.push(material); renderMaterialTags(); }
+    else if (matErr.code !== '23505') { console.warn('添加物料失败:', matErr.message); }
+    else { materials.push(material); renderMaterialTags(); }
+  }
   
   const record = { user_id: currentUser.id, date, material_name: material, supplier, truck_no: truck, abnormal_desc: desc, inspector1, inspector2, created_by: currentUserProfile?.name || currentUser.email };
   const { error } = await supabase.from('records').insert([record]);
   
-  if (error) { showToast('提交失败: ' + error.message, 'error'); btn.disabled = false; btn.textContent = '提交异常信息'; return; }
+  if (error) {
+    console.error('提交失败详情:', error);
+    showToast('提交失败: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '提交异常信息';
+    return;
+  }
   
   clearDraft();
   showSuccessAnimation();
