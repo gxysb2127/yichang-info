@@ -285,7 +285,20 @@ a { color: var(--primary); text-decoration: none; }
 .chart-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 .chart-title::before { content: ''; width: 4px; height: 16px; background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%); border-radius: 2px; }
 .chart-container { position: relative; height: 200px; }
-.chart-container.pie { height: 220px; }
+.chart-container.pie { height: 260px; }
+.chart-card canvas + div {
+  max-height: 100px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.chart-card canvas + div::-webkit-scrollbar {
+  width: 4px;
+}
+.chart-card canvas + div::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
+}
+.chart-card .chartjs-legend { max-height: 120px; overflow-y: auto; padding-right: 8px; }
 
 /* 填报页 */
 .form-page { padding: 16px; padding-bottom: calc(calc(var(--nav-height) + 40px) + var(--safe-area-bottom)); }
@@ -1266,7 +1279,9 @@ async function init() {
   
   setupEventListeners();
   renderMaterialTags();
-  document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
+  const today = new Date();
+          const localDate = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+          document.getElementById('formDate').value = localDate;
   checkDraft();
 }
 
@@ -1753,7 +1768,7 @@ function renderMaterialChart(allRecords) {
   materialChart = new Chart(ctx, {
     type: 'doughnut',
     data: { labels: data.map(d => d.name), datasets: [{ data: data.map(d => d.value), backgroundColor: colors, borderWidth: 0, hoverOffset: 10 }] },
-    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } } } }
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', maxRows: 4, labels: { padding: 6, font: { size: 10 }, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8 } } } }
   });
 }
 
@@ -1830,7 +1845,9 @@ function resetForm() {
   document.getElementById('formInspector1').value = '';
   document.getElementById('formInspector2').value = '';
   document.getElementById('charCount').textContent = '0';
-  document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
+  const today = new Date();
+          const localDate = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+          document.getElementById('formDate').value = localDate;
   document.querySelectorAll('.material-tag').forEach(t => t.classList.remove('selected'));
   document.getElementById('draftHint').classList.add('hidden');
 }
