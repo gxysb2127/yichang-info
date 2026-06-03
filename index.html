@@ -1749,7 +1749,23 @@ function renderTrendChart(allRecords) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     days.push(`${d.getMonth()+1}/${d.getDate()}`);
-    counts.push(allRecords.filter(r => r.date === dateStr).length);
+    // 增强日期匹配：支持date字段和created_at字段，兼容多种格式
+    counts.push(allRecords.filter(r => {
+      let recordDate = r.date;
+      if (!recordDate && r.created_at) {
+        // 如果没有date字段，从created_at中提取日期
+        const ca = new Date(r.created_at);
+        recordDate = ca.getFullYear()+'-'+String(ca.getMonth()+1).padStart(2,'0')+'-'+String(ca.getDate()).padStart(2,'0');
+      }
+      if (typeof recordDate === 'string') {
+        // 兼容ISO格式（如2026-06-03T12:34:56）
+        if (recordDate.includes('T')) {
+          recordDate = recordDate.split('T')[0];
+        }
+        return recordDate === dateStr;
+      }
+      return false;
+    }).length);
   }
   trendChart = new Chart(ctx, {
     type: 'line',
