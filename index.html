@@ -1749,12 +1749,14 @@ function renderTrendChart(allRecords) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     days.push(`${d.getMonth()+1}/${d.getDate()}`);
-    // 增强日期匹配：支持date字段和created_at字段，兼容多种格式
+    // 增强日期匹配：支持date字段和created_at字段，兼容多种格式和时区
     counts.push(allRecords.filter(r => {
       let recordDate = r.date;
       if (!recordDate && r.created_at) {
-        // 如果没有date字段，从created_at中提取日期
+        // 从created_at中提取日期，并转成北京时间
         const ca = new Date(r.created_at);
+        // 加8小时转成北京时间
+        ca.setHours(ca.getHours() + 8);
         recordDate = ca.getFullYear()+'-'+String(ca.getMonth()+1).padStart(2,'0')+'-'+String(ca.getDate()).padStart(2,'0');
       }
       if (typeof recordDate === 'string') {
