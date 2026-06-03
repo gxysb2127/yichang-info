@@ -1469,7 +1469,7 @@ function loadDraft() {
     try {
       const draft = JSON.parse(saved);
       if (Date.now() - draft.timestamp < 7 * 24 * 60 * 60 * 1000) {
-        document.getElementById('formDate').value = draft.date || '';
+        
         document.getElementById('formMaterial').value = draft.material || '';
         document.getElementById('formMaterialInput').value = draft.materialInput || '';
         document.getElementById('formSupplier').value = draft.supplier || '';
@@ -1627,7 +1627,7 @@ async function switchTab(tabName) {
   const formActions = document.querySelector('.form-actions');
   if (formActions) { formActions.classList.toggle('show', tabName === 'form'); }
   
-  if (tabName === 'form') { loadDraft(); }
+  if (tabName === 'form') { const t = new Date(); document.getElementById('formDate').value = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); loadDraft(); }
   if (tabName === 'home') await loadDashboardStats();
   else if (tabName === 'records') await loadRecords();
   else if (tabName === 'profile') await loadMyStats();
