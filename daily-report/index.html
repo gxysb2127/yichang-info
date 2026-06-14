@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a73e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>每日报表填报系统</title>
+  <link rel="manifest" href="manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --primary-dark: #1557b0;
+      --primary-light: #e8f0fe;
+      --success: #34a853;
+      --warning: #fbbc04;
+      --danger: #ea4335;
+      --gray-100: #f8f9fa;
+      --gray-200: #e8eaed;
+      --gray-300: #dadce0;
+      --gray-500: #5f6368;
+      --gray-700: #3c4043;
+      --gray-900: #202124;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,0.15);
+      --radius: 12px;
+      --nav-height: 70px;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-900);
+      min-height: 100vh;
+      padding-bottom: calc(var(--nav-height) + 20px);
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .hidden { display: none !important; }
+    
+    .page { padding: 16px; max-width: 100%; animation: fadeIn 0.3s ease; }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .card-title svg { width: 20px; height: 20px; }
+    
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 20px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .header h1 { font-size: 20px; font-weight: 600; }
+    .header-sub { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 48px;
+    }
+    
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+    .btn-secondary { background: var(--gray-200); color: var(--gray-700); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-block { width: 100%; }
+    .btn-sm { padding: 8px 12px; font-size: 13px; min-height: 36px; }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 14px; font-weight: 500; color: var(--gray-700); margin-bottom: 6px; }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.2s;
+      background: white;
+    }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); }
+    .form-input::placeholder { color: var(--gray-500); }
+    
+    .tab-switch {
+      display: flex;
+      background: var(--gray-200);
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+    .tab-switch .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--gray-500);
+    }
+    .tab-switch .tab-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: var(--shadow);
+    }
+    
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: white;
+      display: flex;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--gray-500);
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .nav-item.active { color: var(--primary); }
+    .nav-item svg { width: 24px; height: 24px; }
+    .nav-item span { font-size: 11px; font-weight: 500; }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .stat-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .stat-value { font-size: 32px; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: 13px; color: var(--gray-500); margin-top: 4px; }
+    .stat-card.success .stat-value { color: var(--success); }
+    
+    .record-list { margin-top: 12px; }
+    .record-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .record-item:last-child { border-bottom: none; }
+    .record-info { flex: 1; }
+    .record-title { font-size: 15px; font-weight: 500; color: var(--gray-900); }
+    .record-meta { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+    .record-quantity { font-size: 20px; font-weight: 700; color: var(--primary); margin-right: 12px; }
+    .record-actions { display: flex; gap: 8px; }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+    .modal {
+      background: white;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--gray-200);
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .modal-body { padding: 16px; }
+    .modal-footer { padding: 16px; border-top: 1px solid var(--gray-200); display: flex; gap: 12px; }
+    
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gray-900);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 3000;
+      animation: toastIn 0.3s ease;
+      max-width: calc(100% - 32px);
+      text-align: center;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    
+    .skeleton {
+      background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+      background-size: 200% 100%;
+      animation: skeleton 1.5s infinite;
+      border-radius: 4px;
+    }
+    @keyframes skeleton {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton-card { height: 120px; margin-bottom: 12px; border-radius: var(--radius); }
+    
+    .login-page { min-height: 100vh; display: flex; flex-direction: column; }
+    .login-header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .login-logo {
+      width: 80px; height: 80px;
+      background: white;
+      border-radius: 20px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-logo svg { width: 48px; height: 48px; color: var(--primary); }
+    .login-title { font-size: 24px; font-weight: 700; }
+    .login-subtitle { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+    .login-form { flex: 1; padding: 24px; background: white; }
+    .login-tabs { display: flex; border-bottom: 2px solid var(--gray-200); margin-bottom: 24px; }
+    .login-tab {
+      flex: 1; padding: 12px; border: none; background: transparent;
+      font-size: 16px; font-weight: 500; cursor: pointer;
+      color: var(--gray-500); border-bottom: 2px solid transparent; margin-bottom: -2px;
+    }
+    .login-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    
+    .user-info {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px; background: var(--primary-light);
+      border-radius: var(--radius); margin-bottom: 16px;
+    }
+    .user-avatar {
+      width: 56px; height: 56px; background: var(--primary);
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; color: white; font-size: 24px; font-weight: 600;
+    }
+    .user-name { font-size: 18px; font-weight: 600; }
+    .user-role { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+    
+    .date-picker-wrapper { position: relative; margin-bottom: 16px; }
+    .date-picker {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 8px; font-size: 15px; background: white; cursor: pointer;
+    }
+    
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--gray-500); }
+    .empty-state svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-state p { font-size: 15px; }
+    
+    .grade-tag {
+      display: inline-block; padding: 4px 8px;
+      border-radius: 4px; font-size: 12px; font-weight: 500;
+    }
+    .grade-tag.qualified { background: #e6f4ea; color: #1e8e3e; }
+    .grade-tag.downgrade { background: #fce8e6; color: #c5221f; }
+    
+    .quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; }
+    .quick-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 20px 12px; background: white; border: none;
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .quick-btn:active { transform: scale(0.98); }
+    .quick-btn svg { width: 32px; height: 32px; color: var(--primary); }
+    .quick-btn span { font-size: 14px; font-weight: 500; color: var(--gray-700); }
+    
+    .export-section { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .export-section .date-input { flex: 1; min-width: 150px; }
+    
+    .user-list-item {
+      display: flex; align-items: center; padding: 12px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .user-list-item:last-child { border-bottom: none; }
+    .user-list-info { flex: 1; }
+    .user-list-name { font-weight: 500; }
+    .user-list-email { font-size: 13px; color: var(--gray-500); }
+    .user-list-status { font-size: 12px; padding: 4px 8px; border-radius: 4px; margin-left: 8px; }
+    .user-list-status.pending { background: #fef7e0; color: #b45309; }
+    .user-list-status.approved { background: #e6f4ea; color: #1e8e3e; }
+    
+    .autocomplete-wrapper { position: relative; }
+    .autocomplete-list {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: white; border: 1.5px solid var(--gray-300);
+      border-top: none; border-radius: 0 0 8px 8px;
+      max-height: 200px; overflow-y: auto; z-index: 100;
+    }
+    .autocomplete-item { padding: 10px 14px; cursor: pointer; font-size: 14px; }
+    .autocomplete-item:hover { background: var(--gray-100); }
+    .autocomplete-item.new { color: var(--primary); font-weight: 500; }
+    
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 20px;
+      padding-right: 40px;
+    }
+    
+    .toggle-wrapper {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px; background: var(--gray-100);
+      border-radius: 8px; margin-bottom: 16px;
+    }
+    .toggle {
+      position: relative; width: 48px; height: 28px;
+      background: var(--gray-300); border-radius: 14px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .toggle.active { background: var(--danger); }
+    .toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 24px; height: 24px; background: white;
+      border-radius: 50%; transition: transform 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .toggle.active::after { transform: translateX(20px); }
+    .toggle-label { font-size: 14px; color: var(--gray-700); }
+    
+    .judge-hint {
+      padding: 12px; background: #fef7e0;
+      border-radius: 8px; font-size: 14px; color: #b45309; margin-top: 12px;
+    }
+    .judge-hint.downgrade { background: #fce8e6; color: #c5221f; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // ==================== 配置 ====================
+    const SUPABASE_URL = 'https://gniwmbfpntgqguubxwwj.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduaXdtYmZwbnRncWd1dWJ4d3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2OTc3NjMsImV4cCI6MjA2MTI3Mzc2M30.pN0_H9x_xG8T6gEDQI5E1K_6bMbH1J2g4v5n5tT5XcY';
+    
+    const { createClient } = supabase;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ==================== 废钢等级配置 ====================
+    const SCRAP_GRADES = [
+      // 废钢类（重废/中废）
+      { value: '重废1', label: '重废1', category: '废钢', order: 1 },
+      { value: '重废2', label: '重废2', category: '废钢', order: 2 },
+      { value: '重废3', label: '重废3', category: '废钢', order: 3 },
+      { value: '重废4', label: '重废4', category: '废钢', order: 4 },
+      { value: '中废1', label: '中废1', category: '废钢', order: 5 },
+      { value: '中废2', label: '中废2', category: '废钢', order: 6 },
+      { value: '中废3', label: '中废3', category: '废钢', order: 7 },
+      // 粉碎料
+      { value: '粉碎料1', label: '粉碎料1', category: '粉碎料', order: 10 },
+      { value: '粉碎料2', label: '粉碎料2', category: '粉碎料', order: 11 },
+      { value: '粉碎料3', label: '粉碎料3', category: '粉碎料', order: 12 },
+      // 管头
+      { value: '管头', label: '管头', category: '管头', order: 20 },
+      // 炉料
+      { value: '炉料1', label: '炉料1', category: '炉料', order: 30 },
+      { value: '炉料2', label: '炉料2', category: '炉料', order: 31 },
+      { value: '炉料3', label: '炉料3', category: '炉料', order: 32 },
+      // 原料压块
+      { value: '原料压块1', label: '原料压块1', category: '原料压块', order: 40 },
+      { value: '原料压块2', label: '原料压块2', category: '原料压块', order: 41 },
+      { value: '原料压块3', label: '原料压块3', category: '原料压块', order: 42 },
+      // 钢筋压块
+      { value: '钢筋压块1', label: '钢筋压块1', category: '钢筋压块', order: 50 },
+      { value: '钢筋压块2', label: '钢筋压块2', category: '钢筋压块', order: 51 },
+      { value: '钢筋压块3', label: '钢筋压块3', category: '钢筋压块', order: 52 }
+    ];
+
+    // 降级目标选项（粉碎料可选其他粉碎料等级）
+    const DOWNGRADE_TARGETS = ['重废1', '重废2', '重废3', '重废4', '中废1', '中废2', '中废3', '粉碎料1', '粉碎料2', '粉碎料3'];
+
+    // 废钢分类
+    const SCRAP_CATEGORIES = ['废钢', '粉碎料', '管头', '炉料', '原料压块', '钢筋压块'];
+
+    // 分类显示顺序
+    const CATEGORY_ORDER = { '废钢': 1, '粉碎料': 2, '管头': 3, '炉料': 4, '原料压块': 5, '钢筋压块': 6 };
+
+    // ==================== 简称→全称映射 ====================
+    const MATERIAL_ALIASES = {
+      '干焦': '准一级干熄焦', '干熄焦': '准一级干熄焦', '焦炭': '准一级干熄焦',
+      '无烟煤': '喷吹用无烟煤',
+      '烟煤': '喷吹用烟煤',
+      '白云石': '白云石粉',
+      '石灰粉': '活性石灰粉', '石灰': '活性石灰粉',
+      '石灰石': '石灰石块',
+      '轻烧': '轻烧白云石',
+      '巴西粉': '巴西精粉', '精粉': '巴西精粉',
+      '混合粉': '巴西混合粉',
+      'MB': 'MB块',
+      '澳粉': '澳麦克粉', '麦克粉': '澳麦克粉',
+      '增碳剂': '普通增碳剂',
+      '电石': '电石粒',
+      '锰硅': '锰硅合金',
+      '硅铁': '硅铁',
+      '稻壳': '碳化稻壳',
+      '镁球': '轻烧镁球',
+    };
+
+    const SUPPLIER_ALIASES = {
+      '达鑫': '滑县达鑫矿产品贸易有限公司',
+      '利源': '河南利源集团燃气有限公司',
+      '兖矿': '兖矿能源集团国际贸易有限公司',
+      '中安': '安阳中安诚宇煤化有限公司', '诚宇': '安阳中安诚宇煤化有限公司',
+      '顺宝': '安阳顺宝能源有限公司',
+      '博新': '安阳博新物资有限公司',
+      '丰创': '安阳市丰创商贸有限公司',
+      '栩翔': '安阳栩翔商贸有限公司',
+      '金锋': '安阳县金锋商贸有限公司',
+      '福华': '林州福华矿业有限公司横水白云岩分公司', '林州白云': '林州福华矿业有限公司横水白云岩分公司',
+      '鑫盛': '安阳鑫盛建材厂',
+      '鑫聚源': '安阳鑫聚源商贸有限公司',
+      '清峪': '安阳县磊口乡清峪石门灰厂', '磊口': '安阳县磊口乡清峪石门灰厂',
+      '连云港': '连云港港口物流有限公司',
+      '建龙': '天津建龙钢铁实业有限公司',
+      '晟源翔': '平罗县晟源翔炭素制品有限公司', '平罗': '平罗县晟源翔炭素制品有限公司',
+      '科德': '内蒙古科德化工有限公司', '内蒙': '内蒙古科德化工有限公司',
+      '恒信达': '安阳市恒信达冶金耐材有限公司',
+      '济钢': '山东济钢泰航合金有限公司',
+      '大石桥': '大石桥市永成耐火材料有限公司',
+      '鄂尔多斯': '鄂尔多斯市西金矿冶有限责任公司',
+      // 废钢简称
+      '资环': '资环华中',
+      '根都': '安阳根都',
+      '磊玉': '安阳磊玉',
+      '金亿': '金亿融',
+      '大通': '林州大通', '林州大通': '林州大通',
+      '中再生': '中再生洛阳',
+      '汇丰': '汇丰管业',
+      '安徽': '安徽中再生',
+    };
+
+    // 通过简称或部分匹配查找全称
+    function resolveMaterialName(input) {
+      if (!input) return input;
+      // 1. 精确匹配已有物料名
+      if (state.materialNames.some(m => m.name === input)) return input;
+      // 2. 精确匹配别名
+      if (MATERIAL_ALIASES[input]) return MATERIAL_ALIASES[input];
+      // 3. 模糊匹配：输入包含在物料全称中，或物料全称包含输入
+      const found = state.materialNames.find(m => m.name.includes(input) || input.includes(m.name));
+      if (found) return found.name;
+      // 4. 模糊匹配别名key
+      const aliasKey = Object.keys(MATERIAL_ALIASES).find(k => k.includes(input) || input.includes(k));
+      if (aliasKey) return MATERIAL_ALIASES[aliasKey];
+      return input; // 找不到就返回原值（可能是新物料）
+    }
+
+    function resolveSupplierName(input, category) {
+      if (!input) return input;
+      const supplierList = category === '废钢' ? state.suppliers.scrap : state.suppliers.raw;
+      // 1. 精确匹配已有供应商
+      if (supplierList.some(s => s.name === input)) return input;
+      // 2. 精确匹配别名
+      if (SUPPLIER_ALIASES[input]) return SUPPLIER_ALIASES[input];
+      // 3. 模糊匹配
+      const found = supplierList.find(s => s.name.includes(input) || input.includes(s.name));
+      if (found) return found.name;
+      // 4. 模糊匹配别名key
+      const aliasKey = Object.keys(SUPPLIER_ALIASES).find(k => k.includes(input) || input.includes(k));
+      if (aliasKey) return SUPPLIER_ALIASES[aliasKey];
+      return input;
+    }
+
+    // ==================== 状态管理 ====================
+    const state = {
+      user: null,
+      currentTab: 'home',
+      currentSubTab: 'raw',
+      dailyDate: formatDate(new Date()),
+      recordsDate: formatDate(new Date()),
+      rawMaterials: [],
+      scrapRecords: [],
+      materialNames: [],
+      suppliers: { raw: [], scrap: [] },
+      isLoading: true,
+      editingItem: null
+    };
+
+    // ==================== 工具函数 ====================
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDateCn(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getMonth() + 1}月${d.getDate()}日`;
+    }
+
+    function getToday() { return formatDate(new Date()); }
+
+    function toast(msg, type = 'info') {
+      const existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    function showLoading() { state.isLoading = true; render(); }
+    function hideLoading() { state.isLoading = false; render(); }
+
+    // ==================== 认证相关 ====================
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        if (userData?.approved || userData?.role === 'admin') {
+          state.user = userData;
+        } else {
+          await supabase.auth.signOut();
+          state.user = null;
+        }
+      }
+      await loadReferenceData();
+      hideLoading();
+    }
+
+    async function login(email, password) {
+      showLoading();
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        hideLoading();
+        toast(error.message, 'error');
+        return false;
+      }
+      await checkAuth();
+      return true;
+    }
+
+    async function register(email, password, name) {
+      showLoading();
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+      if (error) {
+        hideLoading();
+        toast(error.message, 'error');
+        return false;
+      }
+      if (data.user) {
+        await supabase.from('users').insert({ id: data.user.id, email, name, role: 'inspector', approved: false });
+      }
+      hideLoading();
+      toast('注册成功，请等待管理员审批');
+      return true;
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      state.user = null;
+      state.rawMaterials = [];
+      state.scrapRecords = [];
+      render();
+    }
+
+    // ==================== 数据加载 ====================
+    async function loadReferenceData() {
+      const { data: materials } = await supabase.from('daily_material_names').select('*').order('sort_order');
+      state.materialNames = materials || [];
+
+      const { data: suppliers } = await supabase.from('daily_suppliers').select('*');
+      if (suppliers) {
+        state.suppliers.raw = suppliers.filter(s => s.category === '原辅料' || s.category === 'all');
+        state.suppliers.scrap = suppliers.filter(s => s.category === '废钢' || s.category === 'all');
+      }
+    }
+
+    async function loadDailyData(date) {
+      let query = supabase.from('daily_raw_materials').select('*').eq('date', date);
+      if (state.user?.role !== 'admin') query = query.eq('user_id', state.user?.id);
+      const { data: raw } = await query;
+      state.rawMaterials = raw || [];
+
+      let scrapQuery = supabase.from('daily_scrap').select('*').eq('date', date);
+      if (state.user?.role !== 'admin') scrapQuery = scrapQuery.eq('user_id', state.user?.id);
+      const { data: scrap } = await scrapQuery;
+      state.scrapRecords = scrap || [];
+    }
+
+    async function loadUserList() {
+      const { data } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+      return data || [];
+    }
+
+    // ==================== 数据操作 ====================
+    function getScrapCategory(grade) {
+      const found = SCRAP_GRADES.find(g => g.value === grade);
+      return found ? found.category : '废钢';
+    }
+
+    function getGradeOrder(grade) {
+      const found = SCRAP_GRADES.find(g => g.value === grade);
+      return found ? found.order : 99;
+    }
+
+    async function submitRawMaterial(formData) {
+      // 简称→全称自动转换
+      const resolvedMaterial = resolveMaterialName(formData.material_name);
+      const resolvedSupplier = resolveSupplierName(formData.supplier, '原辅料');
+      const { data, error } = await supabase.from('daily_raw_materials').insert({
+        user_id: state.user.id,
+        date: formData.date,
+        material_name: resolvedMaterial,
+        supplier: resolvedSupplier,
+        quantity: parseInt(formData.quantity),
+        unit: '车',
+        created_by: state.user.name
+      }).select().single();
+      
+      if (error) { toast('提交失败: ' + error.message, 'error'); return false; }
+      state.rawMaterials.push(data);
+      toast('提交成功');
+      return true;
+    }
+
+    async function submitScrap(formData) {
+      // 简称→全称自动转换
+      const resolvedSupplier = resolveSupplierName(formData.supplier, '废钢');
+      let judge_grade = '合格';
+      let is_downgrade = false;
+      let downgrade_target = null;
+
+      if (formData.is_downgrade === 'true' || formData.is_downgrade === true) {
+        is_downgrade = true;
+        downgrade_target = formData.downgrade_target;
+        const grade = formData.self_grade;
+        judge_grade = grade.includes('粉碎料') ? `低于90%降级${downgrade_target}` : `低于85%降级${downgrade_target}`;
+      }
+
+      const { data, error } = await supabase.from('daily_scrap').insert({
+        user_id: state.user.id,
+        date: formData.date,
+        supplier: resolvedSupplier,
+        self_grade: formData.self_grade,
+        judge_grade,
+        quantity: parseInt(formData.quantity),
+        category: getScrapCategory(formData.self_grade),
+        is_downgrade,
+        downgrade_target,
+        created_by: state.user.name
+      }).select().single();
+      
+      if (error) { toast('提交失败: ' + error.message, 'error'); return false; }
+      state.scrapRecords.push(data);
+      toast('提交成功');
+      return true;
+    }
+
+    async function deleteRecord(table, id) {
+      const { error } = await supabase.from(table).delete().eq('id', id);
+      if (error) { toast('删除失败', 'error'); return false; }
+      if (table === 'daily_raw_materials') {
+        state.rawMaterials = state.rawMaterials.filter(r => r.id !== id);
+      } else {
+        state.scrapRecords = state.scrapRecords.filter(r => r.id !== id);
+      }
+      toast('删除成功');
+      return true;
+    }
+
+    async function approveUser(userId) {
+      const { error } = await supabase.from('users').update({ approved: true }).eq('id', userId);
+      if (error) { toast('审批失败', 'error'); return false; }
+      toast('审批成功');
+      return true;
+    }
+
+    async function addNewSupplier(name, category) {
+      const { error } = await supabase.from('daily_suppliers').insert({ name, category });
+      if (error) { toast('添加失败', 'error'); return false; }
+      await loadReferenceData();
+      toast('添加成功');
+      return true;
+    }
+
+    async function addNewMaterial(name, category) {
+      const maxOrder = Math.max(...state.materialNames.map(m => m.sort_order || 0), 0);
+      const { error } = await supabase.from('daily_material_names').insert({ name, category, sort_order: maxOrder + 1 });
+      if (error) { toast('添加失败', 'error'); return false; }
+      await loadReferenceData();
+      toast('添加成功');
+      return true;
+    }
+
+    // ==================== Excel导出 ====================
+    function exportExcel(date) {
+      const d = new Date(date);
+      const month = d.getMonth() + 1;
+      const day = d.getDate();
+      const prevDate = new Date(d);
+      prevDate.setDate(d.getDate() - 1);
+      const prevYear = prevDate.getFullYear();
+      const prevMonth = prevDate.getMonth() + 1;
+      const prevDay = prevDate.getDate();
+      const year = d.getFullYear();
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, buildRawSheet(month, day, prevYear, prevMonth, prevDay, year), '原辅料');
+      XLSX.utils.book_append_sheet(wb, buildScrapSheet(month, day), '废钢');
+
+      XLSX.writeFile(wb, `${month}月${day}日验收日报表.xlsx`);
+      toast('导出成功');
+    }
+
+    function buildRawSheet(month, day, prevYear, prevMonth, prevDay, year) {
+      const rawData = [...state.rawMaterials];
+      const materials = state.materialNames;
+      
+      const header = [
+        { v: '序号', w: 8 }, { v: '物料名称', w: 20 }, { v: '供货单位', w: 35 },
+        { v: '进厂已验收(车)', w: 18 }, { v: '分类合计总量', w: 22 }, { v: '备注', w: 18 },
+        { v: '', w: 10 }, { v: '值班', w: 10 }
+      ];
+
+      const ws = { '!ref': '', '!cols': header.map(h => ({ wch: h.w })), '!merges': [] };
+      const data = [];
+
+      // 标题
+      data.push([{ v: `${month}月${day}日原辅料进厂验收明细`, t: 's', s: { font: { bold: true, sz: 16, name: '微软雅黑' }, alignment: { horizontal: 'center' } } }]);
+      data.push([{ v: '' }]);
+      
+      // 表头
+      data.push(header.map(h => ({
+        v: h.v, t: 's',
+        s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'D9E1F2' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } }
+      })));
+
+      let seq = 1;
+      let currentRow = 4;
+
+      // 备注列合并用的行范围记录
+      let rawCatStartRow = -1;  // 原辅料类起始行
+      let rawCatEndRow = -1;    // 原辅料类结束行
+      let alloyCatStartRow = -1; // 合金库类起始行
+      let alloyCatEndRow = -1;   // 合金库类结束行
+
+      // 辅助函数：输出一种物料的数据行
+      function writeMaterialRows(mat, items) {
+        if (items.length === 0) return;
+        const matStartRow = currentRow;
+
+        items.forEach((item, idx) => {
+          const row = [];
+          const cellStyle = { font: { sz: 10, name: '微软雅黑' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
+          
+          row.push({ v: seq++, t: 'n', s: { ...cellStyle, alignment: { horizontal: 'center' } } });
+          row.push({ v: item.material_name, t: 's', s: cellStyle });
+          row.push({ v: item.supplier, t: 's', s: cellStyle });
+          row.push({ v: item.quantity, t: 'n', s: { ...cellStyle, alignment: { horizontal: 'center' } } });
+          
+          if (idx === 0) {
+            const matTotal = items.reduce((sum, i) => sum + i.quantity, 0);
+            row.push({ v: `${mat.name}共${matTotal}车`, t: 's', s: { ...cellStyle, alignment: { horizontal: 'center' } } });
+          } else {
+            row.push({ v: '', t: 's', s: cellStyle });
+          }
+          
+          // 备注列先留空，最后统一合并填写
+          row.push({ v: '', t: 's', s: cellStyle });
+          row.push({ v: '', t: 's', s: cellStyle });
+          row.push({ v: item.created_by, t: 's', s: { ...cellStyle, alignment: { horizontal: 'center' } } });
+
+          data.push(row);
+          currentRow++;
+
+          if (items.length > 1) {
+            ws['!merges'].push({ s: { r: matStartRow, c: 1 }, e: { r: currentRow - 1, c: 1 } });
+          }
+        });
+      }
+
+      // 原辅料类
+      const rawMaterials = materials.filter(m => m.category === '原辅料');
+      rawMaterials.forEach((mat) => {
+        const items = rawData.filter(r => r.material_name === mat.name);
+        if (items.length === 0) return;
+        if (rawCatStartRow === -1) rawCatStartRow = currentRow;
+        rawCatEndRow = currentRow + items.length - 1;
+        writeMaterialRows(mat, items);
+      });
+
+      // 合金库类
+      const alloyMaterials = materials.filter(m => m.category === '合金库');
+      alloyMaterials.forEach((mat) => {
+        const items = rawData.filter(r => r.material_name === mat.name);
+        if (items.length === 0) return;
+        if (alloyCatStartRow === -1) alloyCatStartRow = currentRow;
+        alloyCatEndRow = currentRow + items.length - 1;
+        writeMaterialRows(mat, items);
+      });
+
+      // 备注列合并：原辅料类
+      if (rawCatStartRow !== -1 && rawCatEndRow !== -1) {
+        const rawSum = rawData.filter(r => rawMaterials.some(m => m.name === r.material_name)).reduce((sum, i) => sum + i.quantity, 0);
+        // 在data数组中找到最后一行写备注值（合并后只有首行值会显示）
+        const rawLastDataIdx = rawCatEndRow - 1;
+        if (data[rawLastDataIdx]) {
+          data[rawLastDataIdx][5] = { v: `原辅料共${rawSum}车`, t: 's', s: { font: { sz: 10, name: '微软雅黑' }, alignment: { horizontal: 'center', vertical: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } };
+        }
+        if (rawCatEndRow > rawCatStartRow) {
+          ws['!merges'].push({ s: { r: rawCatStartRow, c: 5 }, e: { r: rawCatEndRow, c: 5 } });
+        }
+      }
+
+      // 备注列合并：合金库类
+      if (alloyCatStartRow !== -1 && alloyCatEndRow !== -1) {
+        const alloySum = rawData.filter(r => alloyMaterials.some(m => m.name === r.material_name)).reduce((sum, i) => sum + i.quantity, 0);
+        const alloyLastDataIdx = alloyCatEndRow - 1;
+        if (data[alloyLastDataIdx]) {
+          data[alloyLastDataIdx][5] = { v: `合金库共${alloySum}车`, t: 's', s: { font: { sz: 10, name: '微软雅黑' }, alignment: { horizontal: 'center', vertical: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } };
+        }
+        if (alloyCatEndRow > alloyCatStartRow) {
+          ws['!merges'].push({ s: { r: alloyCatStartRow, c: 5 }, e: { r: alloyCatEndRow, c: 5 } });
+        }
+      }
+
+      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } });
+
+      // 合计行
+      ws['!merges'].push({ s: { r: currentRow, c: 0 }, e: { r: currentRow, c: 2 } });
+      data.push([
+        { v: '合计', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: rawData.reduce((sum, r) => sum + r.quantity, 0), t: 'n', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } }
+      ]);
+      currentRow++;
+
+      // 统计时间
+      ws['!merges'].push({ s: { r: currentRow, c: 0 }, e: { r: currentRow, c: 7 } });
+      data.push([{ v: `统计时间${prevYear}.${prevMonth}.${prevDay}晚上17:30—${year}.${month}.${day}下午17:30`, t: 's', s: { font: { sz: 10, name: '微软雅黑' }, alignment: { horizontal: 'center' } } }]);
+
+      ws['!ref'] = `A1:H${currentRow + 1}`;
+      XLSX.utils.aoa_to_sheet(ws, data);
+      return ws;
+    }
+
+    function buildScrapSheet(month, day) {
+      const scrapData = [...state.scrapRecords];
+      
+      // 排序规则：按分类排序，同分类内合格在前、降级在后，各自按等级排序
+      const sortedData = [...scrapData].sort((a, b) => {
+        const catOrderA = CATEGORY_ORDER[a.category] || 99;
+        const catOrderB = CATEGORY_ORDER[b.category] || 99;
+        if (catOrderA !== catOrderB) return catOrderA - catOrderB;
+        
+        // 同分类内：合格在前，降级在后
+        const aDown = a.is_downgrade ? 1 : 0;
+        const bDown = b.is_downgrade ? 1 : 0;
+        if (aDown !== bDown) return aDown - bDown;
+        
+        // 合格/降级各自按等级排序
+        const gradeOrderA = getGradeOrder(a.self_grade);
+        const gradeOrderB = getGradeOrder(b.self_grade);
+        if (gradeOrderA !== gradeOrderB) return gradeOrderA - gradeOrderB;
+        
+        // 降级的再按目标等级排序
+        if (aDown && bDown) {
+          const targetA = a.downgrade_target || '';
+          const targetB = b.downgrade_target || '';
+          return getGradeOrder(targetA) - getGradeOrder(targetB);
+        }
+        return 0;
+      });
+
+      const ws = {
+        '!ref': '', '!cols': [
+          { wch: 8 }, { wch: 35 }, { wch: 15 }, { wch: 22 }, { wch: 12 }, { wch: 18 }
+        ], '!merges': []
+      };
+
+      const data = [];
+
+      // 标题
+      data.push([{ v: `${month}月${day}日废钢进厂验收明细`, t: 's', s: { font: { bold: true, sz: 16, name: '微软雅黑' }, alignment: { horizontal: 'center' } } }]);
+      data.push([{ v: '' }]);
+      data.push([{ v: '' }]);
+      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
+
+      // 表头
+      data.push([
+        { v: '序号', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'D9E1F2' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '供货单位', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'D9E1F2' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '自报等级', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'D9E1F2' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '判定等级', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'D9E1F2' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '数量车', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'D9E1F2' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '备注', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'D9E1F2' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } }
+      ]);
+
+      let currentRow = 5;
+      let seq = 1;
+
+      // 记录每个分类的起始和结束行
+      const categoryBounds = {};
+      let currentCategory = null;
+      let categoryStartRow = -1;
+
+      sortedData.forEach((item) => {
+        const category = item.category || '废钢';
+        
+        // 记录分类边界
+        if (currentCategory !== category) {
+          if (currentCategory !== null && categoryStartRow !== -1) {
+            categoryBounds[currentCategory] = { start: categoryStartRow, end: currentRow - 1 };
+          }
+          currentCategory = category;
+          categoryStartRow = currentRow;
+        }
+
+        const row = [];
+        const cellStyle = { font: { sz: 10, name: '微软雅黑' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
+        
+        row.push({ v: seq++, t: 'n', s: { ...cellStyle, alignment: { horizontal: 'center' } } });
+        row.push({ v: item.supplier, t: 's', s: cellStyle });
+        row.push({ v: item.self_grade, t: 's', s: { ...cellStyle, alignment: { horizontal: 'center' } } });
+        row.push({ v: item.judge_grade, t: 's', s: { ...cellStyle, alignment: { horizontal: 'center' } } });
+        row.push({ v: item.quantity, t: 'n', s: { ...cellStyle, alignment: { horizontal: 'center' } } });
+        row.push({ v: '', t: 's', s: { ...cellStyle, alignment: { horizontal: 'center' } } }); // 备注稍后填充
+
+        data.push(row);
+        currentRow++;
+      });
+
+      // 记录最后一个分类
+      if (currentCategory !== null && categoryStartRow !== -1) {
+        categoryBounds[currentCategory] = { start: categoryStartRow, end: currentRow - 1 };
+      }
+
+      // 填充备注列 - 每个分类的最后一行写该分类的合计
+      Object.entries(categoryBounds).forEach(([category, bounds]) => {
+        const categoryItems = scrapData.filter(r => (r.category || '废钢') === category);
+        const categorySum = categoryItems.reduce((sum, r) => sum + r.quantity, 0);
+        const lastRow = bounds.end;
+        const lastRowIndex = lastRow - 1; // data数组索引 = Excel行号 - 1
+        
+        if (lastRowIndex >= 0 && data[lastRowIndex]) {
+          data[lastRowIndex][5] = { v: `${category}共${categorySum}车`, t: 's', s: { font: { sz: 10, name: '微软雅黑' }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } };
+        }
+
+        // 如果分类只有一行，不需要合并
+        if (bounds.start !== bounds.end) {
+          ws['!merges'].push({ s: { r: bounds.start, c: 5 }, e: { r: bounds.end, c: 5 } });
+        }
+      });
+
+      // 合计行
+      ws['!merges'].push({ s: { r: currentRow, c: 0 }, e: { r: currentRow, c: 3 } });
+      data.push([
+        { v: '合计', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: scrapData.reduce((sum, r) => sum + r.quantity, 0), t: 'n', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, alignment: { horizontal: 'center' }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } },
+        { v: '', t: 's', s: { font: { bold: true, sz: 11, name: '微软雅黑' }, fill: { fgColor: { rgb: 'E2EFDA' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } } }
+      ]);
+
+      ws['!ref'] = `A1:F${currentRow + 1}`;
+      XLSX.utils.aoa_to_sheet(ws, data);
+      return ws;
+    }
+
+    // ==================== 渲染函数 ====================
+    function render() {
+      const app = document.getElementById('app');
+      if (!state.user) { app.innerHTML = renderLoginPage(); bindLoginEvents(); return; }
+      if (state.isLoading) { app.innerHTML = renderLoadingPage(); return; }
+
+      const pages = { home: renderHomePage(), fill: renderFillPage(), records: renderRecordsPage(), profile: renderProfilePage() };
+
+      app.innerHTML = `
+        <div class="header">
+          <h1>每日报表填报系统</h1>
+          <div class="header-sub">${state.user.name} · ${state.user.role === 'admin' ? '管理员' : '验收员'}</div>
+        </div>
+        <div id="page-content">${pages[state.currentTab]}</div>
+        ${renderBottomNav()}
+      `;
+      bindPageEvents();
+    }
+
+    function renderLoginPage() {
+      return `
+        <div class="login-page">
+          <div class="login-header">
+            <div class="login-logo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+            </div>
+            <div class="login-title">每日报表填报系统</div>
+            <div class="login-subtitle">沙钢永兴特钢技术质量处</div>
+          </div>
+          <div class="login-form">
+            <div class="login-tabs">
+              <button class="login-tab active" data-tab="login">登录</button>
+              <button class="login-tab" data-tab="register">注册</button>
+            </div>
+            <form id="auth-form">
+              <div class="form-group">
+                <label class="form-label">邮箱</label>
+                <input type="email" class="form-input" id="auth-email" placeholder="请输入邮箱" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">密码</label>
+                <input type="password" class="form-input" id="auth-password" placeholder="请输入密码" required>
+              </div>
+              <div class="form-group hidden" id="name-group">
+                <label class="form-label">姓名</label>
+                <input type="text" class="form-input" id="auth-name" placeholder="请输入姓名">
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">登录</button>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLoadingPage() {
+      return `<div class="page"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>`;
+    }
+
+    function renderHomePage() {
+      const today = getToday();
+      const todayRaw = state.rawMaterials.filter(r => r.date === today);
+      const todayScrap = state.scrapRecords.filter(r => r.date === today);
+      const rawTotal = todayRaw.reduce((sum, r) => sum + r.quantity, 0);
+      const scrapTotal = todayScrap.reduce((sum, r) => sum + r.quantity, 0);
+
+      return `
+        <div class="page">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">${rawTotal}</div>
+              <div class="stat-label">今日原辅料（车）</div>
+            </div>
+            <div class="stat-card success">
+              <div class="stat-value">${scrapTotal}</div>
+              <div class="stat-label">今日废钢（车）</div>
+            </div>
+          </div>
+          <div class="card" style="margin-top: 16px;">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              快捷操作
+            </div>
+            <div class="quick-actions">
+              <button class="quick-btn" onclick="switchTab('fill'); state.currentSubTab='raw'; render();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+                <span>填报原辅料</span>
+              </button>
+              <button class="quick-btn" onclick="switchTab('fill'); state.currentSubTab='scrap'; render();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+                <span>填报废钢</span>
+              </button>
+              <button class="quick-btn" onclick="switchTab('records');">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                <span>查看记录</span>
+              </button>
+              ${state.user?.role === 'admin' ? `
+              <button class="quick-btn" onclick="switchTab('profile');">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>导出报表</span>
+              </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFillPage() {
+      return state.currentSubTab === 'raw' ? renderRawMaterialForm() : renderScrapForm();
+    }
+
+    function renderRawMaterialForm() {
+      return `
+        <div class="page">
+          <div class="tab-switch">
+            <button class="tab-btn active" onclick="state.currentSubTab='raw'; render();">原辅料</button>
+            <button class="tab-btn" onclick="state.currentSubTab='scrap'; render();">废钢</button>
+          </div>
+          <div class="card">
+            <form id="raw-form">
+              <div class="form-group">
+                <label class="form-label">日期</label>
+                <input type="date" class="form-input" id="raw-date" value="${state.dailyDate}" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">物料名称</label>
+                <div class="autocomplete-wrapper">
+                  <input type="text" class="form-input" id="raw-material" placeholder="请选择或输入物料名称" required autocomplete="off">
+                  <div class="autocomplete-list hidden" id="material-list"></div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">供货单位</label>
+                <div class="autocomplete-wrapper">
+                  <input type="text" class="form-input" id="raw-supplier" placeholder="输入简称或全称，如：达鑫、利源" required autocomplete="off">
+                  <div class="autocomplete-list hidden" id="raw-supplier-list"></div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">车数</label>
+                <input type="number" class="form-input" id="raw-quantity" placeholder="请输入车数（整数）" min="1" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">提交</button>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderScrapForm() {
+      return `
+        <div class="page">
+          <div class="tab-switch">
+            <button class="tab-btn" onclick="state.currentSubTab='raw'; render();">原辅料</button>
+            <button class="tab-btn active" onclick="state.currentSubTab='scrap'; render();">废钢</button>
+          </div>
+          <div class="card">
+            <form id="scrap-form">
+              <div class="form-group">
+                <label class="form-label">日期</label>
+                <input type="date" class="form-input" id="scrap-date" value="${state.dailyDate}" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">供货单位</label>
+                <div class="autocomplete-wrapper">
+                  <input type="text" class="form-input" id="scrap-supplier" placeholder="输入简称或全称，如：资环、金亿" required autocomplete="off">
+                  <div class="autocomplete-list hidden" id="scrap-supplier-list"></div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">自报等级</label>
+                <select class="form-select" id="scrap-grade" required onchange="onGradeChange()">
+                  <option value="">请选择等级</option>
+                  ${SCRAP_GRADES.map(g => `<option value="${g.value}">${g.label}</option>`).join('')}
+                </select>
+              </div>
+              <div class="toggle-wrapper">
+                <div class="toggle" id="downgrade-toggle" onclick="toggleDowngrade()"></div>
+                <span class="toggle-label">降级</span>
+              </div>
+              <div class="form-group hidden" id="downgrade-group">
+                <label class="form-label">降级目标</label>
+                <select class="form-select" id="scrap-downgrade-target">
+                  <option value="">请选择降级目标</option>
+                  ${DOWNGRADE_TARGETS.map(g => `<option value="${g}">${g}</option>`).join('')}
+                </select>
+              </div>
+              <div id="judge-hint" class="judge-hint hidden"></div>
+              <div class="form-group">
+                <label class="form-label">车数</label>
+                <input type="number" class="form-input" id="scrap-quantity" placeholder="请输入车数（整数）" min="1" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">提交</button>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRecordsPage() {
+      return `
+        <div class="page">
+          <div class="tab-switch">
+            <button class="tab-btn ${state.currentSubTab === 'raw' ? 'active' : ''}" onclick="state.currentSubTab='raw'; loadRecordsByDate();">原辅料</button>
+            <button class="tab-btn ${state.currentSubTab === 'scrap' ? 'active' : ''}" onclick="state.currentSubTab='scrap'; loadRecordsByDate();">废钢</button>
+          </div>
+          <div class="card">
+            <div class="date-picker-wrapper">
+              <label class="form-label">选择日期</label>
+              <input type="date" class="date-picker" id="records-date" value="${state.recordsDate}" onchange="loadRecordsByDate()">
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              记录列表
+            </div>
+            <div class="record-list" id="record-list">${renderRecordList()}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRecordList() {
+      if (state.currentSubTab === 'raw') {
+        if (state.rawMaterials.length === 0) {
+          return `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p>暂无记录</p></div>`;
+        }
+        return state.rawMaterials.map(r => `
+          <div class="record-item">
+            <div class="record-info">
+              <div class="record-title">${r.material_name}</div>
+              <div class="record-meta">${r.supplier} · ${r.created_by}</div>
+            </div>
+            <div class="record-quantity">${r.quantity}车</div>
+            <div class="record-actions">
+              ${(state.user?.role === 'admin' || state.user?.id === r.user_id) ? `<button class="btn btn-danger btn-sm" onclick="deleteRecord('daily_raw_materials', '${r.id}')">删除</button>` : ''}
+            </div>
+          </div>
+        `).join('');
+      } else {
+        if (state.scrapRecords.length === 0) {
+          return `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p>暂无记录</p></div>`;
+        }
+        return state.scrapRecords.map(r => `
+          <div class="record-item">
+            <div class="record-info">
+              <div class="record-title">${r.supplier}</div>
+              <div class="record-meta">
+                <span class="grade-tag ${r.is_downgrade ? 'downgrade' : 'qualified'}">${r.self_grade}</span>
+                → ${r.judge_grade} · ${r.created_by}
+              </div>
+            </div>
+            <div class="record-quantity">${r.quantity}车</div>
+            <div class="record-actions">
+              ${(state.user?.role === 'admin' || state.user?.id === r.user_id) ? `<button class="btn btn-danger btn-sm" onclick="deleteRecord('daily_scrap', '${r.id}')">删除</button>` : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function renderProfilePage() {
+      return `
+        <div class="page">
+          <div class="user-info">
+            <div class="user-avatar">${state.user?.name?.charAt(0) || 'U'}</div>
+            <div>
+              <div class="user-name">${state.user?.name}</div>
+              <div class="user-role">${state.user?.role === 'admin' ? '管理员' : '验收员'} · ${state.user?.email}</div>
+            </div>
+          </div>
+          ${state.user?.role === 'admin' ? `
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              导出Excel报表
+            </div>
+            <div class="export-section">
+              <input type="date" class="form-input export-section date-input" id="export-date" value="${state.recordsDate}">
+              <button class="btn btn-primary" onclick="exportByDate()">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                导出
+              </button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              用户管理
+            </div>
+            <div id="user-list"></div>
+          </div>
+          ` : ''}
+          <div class="card">
+            <button class="btn btn-secondary btn-block" onclick="logout()">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              退出登录
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBottomNav() {
+      return `
+        <nav class="bottom-nav">
+          <div class="nav-item ${state.currentTab === 'home' ? 'active' : ''}" onclick="switchTab('home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>首页</span>
+          </div>
+          <div class="nav-item ${state.currentTab === 'fill' ? 'active' : ''}" onclick="switchTab('fill')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span>填报</span>
+          </div>
+          <div class="nav-item ${state.currentTab === 'records' ? 'active' : ''}" onclick="switchTab('records')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            <span>记录</span>
+          </div>
+          <div class="nav-item ${state.currentTab === 'profile' ? 'active' : ''}" onclick="switchTab('profile')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>我的</span>
+          </div>
+        </nav>
+      `;
+    }
+
+    // ==================== 事件绑定 ====================
+    function bindLoginEvents() {
+      const tabs = document.querySelectorAll('.login-tab');
+      const nameGroup = document.getElementById('name-group');
+      const form = document.getElementById('auth-form');
+      const submitBtn = form.querySelector('button');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          if (tab.dataset.tab === 'register') {
+            nameGroup.classList.remove('hidden');
+            submitBtn.textContent = '注册';
+          } else {
+            nameGroup.classList.add('hidden');
+            submitBtn.textContent = '登录';
+          }
+        });
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
+        const name = document.getElementById('auth-name').value;
+        const isRegister = document.querySelector('.login-tab.active').dataset.tab === 'register';
+        if (isRegister) {
+          if (!name) { toast('请输入姓名', 'error'); return; }
+          await register(email, password, name);
+        } else {
+          await login(email, password);
+        }
+      });
+    }
+
+    function bindPageEvents() {
+      const rawForm = document.getElementById('raw-form');
+      if (rawForm) {
+        const materialInput = document.getElementById('raw-material');
+        const materialList = document.getElementById('material-list');
+        
+        materialInput.addEventListener('focus', () => showMaterialSuggestions(''));
+        materialInput.addEventListener('input', (e) => showMaterialSuggestions(e.target.value));
+        materialInput.addEventListener('blur', () => setTimeout(() => materialList.classList.add('hidden'), 200));
+
+        const rawSupplierInput = document.getElementById('raw-supplier');
+        const rawSupplierList = document.getElementById('raw-supplier-list');
+        if (rawSupplierInput) {
+          rawSupplierInput.addEventListener('focus', () => showSupplierSuggestions('', 'raw'));
+          rawSupplierInput.addEventListener('input', (e) => showSupplierSuggestions(e.target.value, 'raw'));
+          rawSupplierInput.addEventListener('blur', () => setTimeout(() => rawSupplierList.classList.add('hidden'), 200));
+        }
+
+        rawForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = {
+            date: document.getElementById('raw-date').value,
+            material_name: document.getElementById('raw-material').value,
+            supplier: document.getElementById('raw-supplier').value,
+            quantity: document.getElementById('raw-quantity').value
+          };
+          if (!formData.material_name || !formData.supplier || !formData.quantity) {
+            toast('请填写完整信息', 'error');
+            return;
+          }
+          const success = await submitRawMaterial(formData);
+          if (success) {
+            state.dailyDate = formData.date;
+            document.getElementById('raw-date').value = formData.date;
+            document.getElementById('raw-material').value = formData.material_name;
+            document.getElementById('raw-quantity').value = '';
+            document.getElementById('raw-supplier').value = '';
+          }
+        });
+      }
+
+      const scrapForm = document.getElementById('scrap-form');
+      if (scrapForm) {
+        const scrapSupplierInput = document.getElementById('scrap-supplier');
+        const scrapSupplierList = document.getElementById('scrap-supplier-list');
+        if (scrapSupplierInput) {
+          scrapSupplierInput.addEventListener('focus', () => showSupplierSuggestions('', 'scrap'));
+          scrapSupplierInput.addEventListener('input', (e) => showSupplierSuggestions(e.target.value, 'scrap'));
+          scrapSupplierInput.addEventListener('blur', () => setTimeout(() => scrapSupplierList.classList.add('hidden'), 200));
+        }
+
+        scrapForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const isDowngrade = document.getElementById('downgrade-toggle').classList.contains('active');
+          const downgradeTarget = document.getElementById('scrap-downgrade-target').value;
+          if (isDowngrade && !downgradeTarget) { toast('请选择降级目标', 'error'); return; }
+
+          const formData = {
+            date: document.getElementById('scrap-date').value,
+            supplier: document.getElementById('scrap-supplier').value,
+            self_grade: document.getElementById('scrap-grade').value,
+            is_downgrade: isDowngrade,
+            downgrade_target: downgradeTarget,
+            quantity: document.getElementById('scrap-quantity').value
+          };
+          if (!formData.supplier || !formData.self_grade || !formData.quantity) {
+            toast('请填写完整信息', 'error');
+            return;
+          }
+          const success = await submitScrap(formData);
+          if (success) {
+            state.dailyDate = formData.date;
+            document.getElementById('scrap-date').value = formData.date;
+            document.getElementById('scrap-supplier').value = formData.supplier;
+            document.getElementById('scrap-grade').value = '';
+            document.getElementById('scrap-quantity').value = '';
+            document.getElementById('downgrade-toggle').classList.remove('active');
+            document.getElementById('downgrade-group').classList.add('hidden');
+            document.getElementById('judge-hint').classList.add('hidden');
+          }
+        });
+      }
+
+      if (state.user?.role === 'admin' && document.getElementById('user-list')) {
+        loadUserList().then(users => {
+          const list = document.getElementById('user-list');
+          list.innerHTML = users.map(u => `
+            <div class="user-list-item">
+              <div class="user-list-info">
+                <div class="user-list-name">${u.name}</div>
+                <div class="user-list-email">${u.email}</div>
+              </div>
+              ${!u.approved ? `
+                <span class="user-list-status pending">待审批</span>
+                <button class="btn btn-success btn-sm" onclick="approveUser('${u.id}')">通过</button>
+              ` : `<span class="user-list-status approved">已通过</span>`}
+            </div>
+          `).join('');
+        });
+      }
+    }
+
+    function showMaterialSuggestions(query) {
+      const list = document.getElementById('material-list');
+      if (!query) { list.classList.add('hidden'); return; }
+      
+      // 匹配物料全称
+      const matched = state.materialNames.filter(m => m.name.toLowerCase().includes(query.toLowerCase()));
+      // 匹配简称别名
+      const aliasMatches = Object.entries(MATERIAL_ALIASES)
+        .filter(([alias, fullName]) => alias.includes(query) || fullName.includes(query))
+        .filter(([alias, fullName]) => !matched.some(m => m.name === fullName))
+        .map(([alias, fullName]) => ({ alias, name: fullName, category: (state.materialNames.find(m => m.name === fullName) || {}).category || '原辅料' }));
+      
+      if (matched.length === 0 && aliasMatches.length === 0 && query) {
+        list.innerHTML = `<div class="autocomplete-item new" onclick="selectNewMaterial('${query}')">+ 添加新物料：${query}</div>`;
+      } else {
+        const matchedHtml = matched.map(m => `<div class="autocomplete-item" onclick="selectMaterial('${m.name}')">${m.name}</div>`).join('');
+        const aliasHtml = aliasMatches.map(a => `<div class="autocomplete-item" onclick="selectMaterial('${a.name}')" style="color:var(--primary)">${a.alias} → ${a.name}</div>`).join('');
+        list.innerHTML = matchedHtml + aliasHtml;
+      }
+      list.classList.remove('hidden');
+    }
+
+    function selectMaterial(name) {
+      document.getElementById('raw-material').value = name;
+      document.getElementById('material-list').classList.add('hidden');
+    }
+
+    // 供应商自动补全
+    function showSupplierSuggestions(query, type) {
+      const listId = type === 'raw' ? 'raw-supplier-list' : 'scrap-supplier-list';
+      const list = document.getElementById(listId);
+      if (!list) return;
+      if (!query) {
+        // 显示全部供应商
+        const suppliers = type === 'raw' ? state.suppliers.raw : state.suppliers.scrap;
+        list.innerHTML = suppliers.map(s => `<div class="autocomplete-item" onclick="selectSupplier('${type}', '${s.name}')">${s.name}</div>`).join('');
+        list.classList.remove('hidden');
+        return;
+      }
+      const suppliers = type === 'raw' ? state.suppliers.raw : state.suppliers.scrap;
+      // 匹配全称
+      const matched = suppliers.filter(s => s.name.toLowerCase().includes(query.toLowerCase()));
+      // 匹配简称别名
+      const aliasMatches = Object.entries(SUPPLIER_ALIASES)
+        .filter(([alias, fullName]) => alias.includes(query) || fullName.includes(query))
+        .filter(([alias, fullName]) => !matched.some(s => s.name === fullName))
+        .map(([alias, fullName]) => ({ alias, name: fullName }));
+      
+      if (matched.length === 0 && aliasMatches.length === 0 && query) {
+        list.innerHTML = `<div class="autocomplete-item new" onclick="selectSupplier('${type}', '${query}')">使用输入：${query}</div>`;
+      } else {
+        const matchedHtml = matched.map(s => `<div class="autocomplete-item" onclick="selectSupplier('${type}', '${s.name}')">${s.name}</div>`).join('');
+        const aliasHtml = aliasMatches.map(a => `<div class="autocomplete-item" onclick="selectSupplier('${type}', '${a.name}')" style="color:var(--primary)">${a.alias} → ${a.name}</div>`).join('');
+        list.innerHTML = matchedHtml + aliasHtml;
+      }
+      list.classList.remove('hidden');
+    }
+
+    function selectSupplier(type, name) {
+      const inputId = type === 'raw' ? 'raw-supplier' : 'scrap-supplier';
+      const listId = type === 'raw' ? 'raw-supplier-list' : 'scrap-supplier-list';
+      document.getElementById(inputId).value = name;
+      document.getElementById(listId).classList.add('hidden');
+    }
+
+    async function selectNewMaterial(name) {
+      if (confirm(`确定要添加新物料「${name}」吗？`)) {
+        await addNewMaterial(name, '原辅料');
+        selectMaterial(name);
+      }
+    }
+
+    function toggleDowngrade() {
+      const toggle = document.getElementById('downgrade-toggle');
+      const group = document.getElementById('downgrade-group');
+      toggle.classList.toggle('active');
+      if (toggle.classList.contains('active')) {
+        group.classList.remove('hidden');
+      } else {
+        group.classList.add('hidden');
+        document.getElementById('judge-hint').classList.add('hidden');
+      }
+      updateJudgeHint();
+    }
+
+    function onGradeChange() { updateJudgeHint(); }
+
+    function updateJudgeHint() {
+      const grade = document.getElementById('scrap-grade')?.value;
+      const isDowngrade = document.getElementById('downgrade-toggle')?.classList.contains('active');
+      const hint = document.getElementById('judge-hint');
+      const target = document.getElementById('scrap-downgrade-target')?.value;
+      
+      if (!grade) { hint.classList.add('hidden'); return; }
+      
+      if (isDowngrade && target) {
+        hint.classList.remove('hidden');
+        hint.classList.add('downgrade');
+        hint.textContent = grade.includes('粉碎料') ? `判定：低于90%降级${target}` : `判定：低于85%降级${target}`;
+      } else if (!isDowngrade) {
+        hint.classList.remove('hidden');
+        hint.classList.remove('downgrade');
+        hint.textContent = '判定：合格';
+      } else {
+        hint.classList.add('hidden');
+      }
+    }
+
+    // ==================== 全局函数 ====================
+    window.switchTab = function(tab) {
+      state.currentTab = tab;
+      if (tab === 'records') loadRecordsByDate();
+      render();
+    };
+
+    window.loadRecordsByDate = async function() {
+      const dateInput = document.getElementById('records-date');
+      if (dateInput) state.recordsDate = dateInput.value;
+      await loadDailyData(state.recordsDate);
+      const list = document.getElementById('record-list');
+      if (list) list.innerHTML = renderRecordList();
+    };
+
+    window.deleteRecord = async function(table, id) {
+      if (!confirm('确定要删除这条记录吗？')) return;
+      await deleteRecord(table, id);
+      render();
+    };
+
+    window.approveUser = async function(userId) {
+      await approveUser(userId);
+      render();
+    };
+
+    window.exportByDate = async function() {
+      const date = document.getElementById('export-date')?.value;
+      if (!date) { toast('请选择日期', 'error'); return; }
+      state.recordsDate = date;
+      await loadDailyData(date);
+      exportExcel(date);
+    };
+
+    window.toggleDowngrade = toggleDowngrade;
+    window.onGradeChange = onGradeChange;
+    window.selectMaterial = selectMaterial;
+    window.selectNewMaterial = selectNewMaterial;
+
+    // ==================== 初始化 ====================
+    document.addEventListener('DOMContentLoaded', async () => { await checkAuth(); });
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') checkAuth();
+      else if (event === 'SIGNED_OUT') { state.user = null; render(); }
+    });
+  </script>
+</body>
+</html>
