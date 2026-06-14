@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>每日报表填报系统</title>
   <link rel="manifest" href="manifest.json">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -34,7 +34,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     
     body {
-      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
       background: var(--gray-100);
       color: var(--gray-900);
       min-height: 100vh;
@@ -404,8 +404,8 @@
     const SUPABASE_URL = 'https://gniwmbfpntgqguubxwwj.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduaXdtYmZwbnRncWd1dWJ4d3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2OTc3NjMsImV4cCI6MjA2MTI3Mzc2M30.pN0_H9x_xG8T6gEDQI5E1K_6bMbH1J2g4v5n5tT5XcY';
     
-    const { createClient } = supabase;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const { createClient } = window.supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // ==================== 废钢等级配置 ====================
     const SCRAP_GRADES = [
@@ -577,7 +577,7 @@
 
     // ==================== 认证相关 ====================
     async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await db.auth.getSession();
       if (session?.user) {
         const { data: userData } = await supabase
           .from('users')
@@ -587,7 +587,7 @@
         if (userData?.approved || userData?.role === 'admin') {
           state.user = userData;
         } else {
-          await supabase.auth.signOut();
+          await db.auth.signOut();
           state.user = null;
         }
       }
@@ -597,7 +597,7 @@
 
     async function login(email, password) {
       showLoading();
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
       if (error) {
         hideLoading();
         toast(error.message, 'error');
@@ -609,14 +609,14 @@
 
     async function register(email, password, name) {
       showLoading();
-      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+      const { data, error } = await db.auth.signUp({ email, password, options: { data: { name } } });
       if (error) {
         hideLoading();
         toast(error.message, 'error');
         return false;
       }
       if (data.user) {
-        await supabase.from('users').insert({ id: data.user.id, email, name, role: 'inspector', approved: false });
+        await db.from('users').insert({ id: data.user.id, email, name, role: 'inspector', approved: false });
       }
       hideLoading();
       toast('注册成功，请等待管理员审批');
@@ -624,7 +624,7 @@
     }
 
     async function logout() {
-      await supabase.auth.signOut();
+      await db.auth.signOut();
       state.user = null;
       state.rawMaterials = [];
       state.scrapRecords = [];
@@ -633,10 +633,10 @@
 
     // ==================== 数据加载 ====================
     async function loadReferenceData() {
-      const { data: materials } = await supabase.from('daily_material_names').select('*').order('sort_order');
+      const { data: materials } = await db.from('daily_material_names').select('*').order('sort_order');
       state.materialNames = materials || [];
 
-      const { data: suppliers } = await supabase.from('daily_suppliers').select('*');
+      const { data: suppliers } = await db.from('daily_suppliers').select('*');
       if (suppliers) {
         state.suppliers.raw = suppliers.filter(s => s.category === '原辅料' || s.category === 'all');
         state.suppliers.scrap = suppliers.filter(s => s.category === '废钢' || s.category === 'all');
@@ -644,19 +644,19 @@
     }
 
     async function loadDailyData(date) {
-      let query = supabase.from('daily_raw_materials').select('*').eq('date', date);
+      let query = db.from('daily_raw_materials').select('*').eq('date', date);
       if (state.user?.role !== 'admin') query = query.eq('user_id', state.user?.id);
       const { data: raw } = await query;
       state.rawMaterials = raw || [];
 
-      let scrapQuery = supabase.from('daily_scrap').select('*').eq('date', date);
+      let scrapQuery = db.from('daily_scrap').select('*').eq('date', date);
       if (state.user?.role !== 'admin') scrapQuery = scrapQuery.eq('user_id', state.user?.id);
       const { data: scrap } = await scrapQuery;
       state.scrapRecords = scrap || [];
     }
 
     async function loadUserList() {
-      const { data } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+      const { data } = await db.from('users').select('*').order('created_at', { ascending: false });
       return data || [];
     }
 
@@ -675,7 +675,7 @@
       // 简称→全称自动转换
       const resolvedMaterial = resolveMaterialName(formData.material_name);
       const resolvedSupplier = resolveSupplierName(formData.supplier, '原辅料');
-      const { data, error } = await supabase.from('daily_raw_materials').insert({
+      const { data, error } = await db.from('daily_raw_materials').insert({
         user_id: state.user.id,
         date: formData.date,
         material_name: resolvedMaterial,
@@ -705,7 +705,7 @@
         judge_grade = grade.includes('粉碎料') ? `低于90%降级${downgrade_target}` : `低于85%降级${downgrade_target}`;
       }
 
-      const { data, error } = await supabase.from('daily_scrap').insert({
+      const { data, error } = await db.from('daily_scrap').insert({
         user_id: state.user.id,
         date: formData.date,
         supplier: resolvedSupplier,
@@ -725,7 +725,7 @@
     }
 
     async function deleteRecord(table, id) {
-      const { error } = await supabase.from(table).delete().eq('id', id);
+      const { error } = await db.from(table).delete().eq('id', id);
       if (error) { toast('删除失败', 'error'); return false; }
       if (table === 'daily_raw_materials') {
         state.rawMaterials = state.rawMaterials.filter(r => r.id !== id);
@@ -737,14 +737,14 @@
     }
 
     async function approveUser(userId) {
-      const { error } = await supabase.from('users').update({ approved: true }).eq('id', userId);
+      const { error } = await db.from('users').update({ approved: true }).eq('id', userId);
       if (error) { toast('审批失败', 'error'); return false; }
       toast('审批成功');
       return true;
     }
 
     async function addNewSupplier(name, category) {
-      const { error } = await supabase.from('daily_suppliers').insert({ name, category });
+      const { error } = await db.from('daily_suppliers').insert({ name, category });
       if (error) { toast('添加失败', 'error'); return false; }
       await loadReferenceData();
       toast('添加成功');
@@ -753,7 +753,7 @@
 
     async function addNewMaterial(name, category) {
       const maxOrder = Math.max(...state.materialNames.map(m => m.sort_order || 0), 0);
-      const { error } = await supabase.from('daily_material_names').insert({ name, category, sort_order: maxOrder + 1 });
+      const { error } = await db.from('daily_material_names').insert({ name, category, sort_order: maxOrder + 1 });
       if (error) { toast('添加失败', 'error'); return false; }
       await loadReferenceData();
       toast('添加成功');
@@ -1659,8 +1659,8 @@
     window.selectNewMaterial = selectNewMaterial;
 
     // ==================== 初始化 ====================
-    document.addEventListener('DOMContentLoaded', async () => { await checkAuth(); });
-    supabase.auth.onAuthStateChange((event, session) => {
+    document.addEventListener('DOMContentLoaded', async () => { try { await checkAuth(); } catch(e) { console.error(e); document.getElementById('app').innerHTML = '<div style="padding:40px;text-align:center"><h2>加载出错</h2><p>' + e.message + '</p><p>请刷新重试，或检查网络连接</p></div>'; } });
+    db.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') checkAuth();
       else if (event === 'SIGNED_OUT') { state.user = null; render(); }
     });
