@@ -80,16 +80,6 @@
       z-index: 100;
     }
     
-    .header { display: flex; align-items: center; gap: 12px; }
-    .header-logo {
-      width: 36px; height: 36px;
-      background: white;
-      border-radius: 8px;
-      padding: 3px;
-      flex-shrink: 0;
-    }
-    .header-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 5px; }
-    .header-text { flex: 1; }
     .header h1 { font-size: 20px; font-weight: 600; }
     .header-sub { font-size: 13px; opacity: 0.9; margin-top: 4px; }
     
@@ -290,7 +280,7 @@
       align-items: center;
       justify-content: center;
     }
-    .login-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 14px; }
+    .login-logo svg { width: 48px; height: 48px; color: var(--primary); }
     .login-title { font-size: 24px; font-weight: 700; }
     .login-subtitle { font-size: 14px; opacity: 0.9; margin-top: 4px; }
     .login-form { flex: 1; padding: 24px; background: white; }
@@ -1061,11 +1051,8 @@
 
       app.innerHTML = `
         <div class="header">
-          <div class="header-logo"><img src="logo.jpg" alt="沙钢logo"></div>
-          <div class="header-text">
-            <h1>每日报表填报系统</h1>
-            <div class="header-sub">${state.user.name} · ${state.user.role === 'admin' ? '管理员' : '验收员'}</div>
-          </div>
+          <h1>每日报表填报系统</h1>
+          <div class="header-sub">${state.user.name} · ${state.user.role === 'admin' ? '管理员' : '验收员'}</div>
         </div>
         <div id="page-content">${pages[state.currentTab]}</div>
         ${renderBottomNav()}
@@ -1078,10 +1065,15 @@
         <div class="login-page">
           <div class="login-header">
             <div class="login-logo">
-              <img src="logo.jpg" alt="沙钢logo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
             </div>
             <div class="login-title">每日报表填报系统</div>
-            <div class="login-subtitle">技术质量处验收班</div>
+            <div class="login-subtitle">沙钢永兴特钢技术质量处</div>
           </div>
           <div class="login-form">
             <div class="login-tabs">
