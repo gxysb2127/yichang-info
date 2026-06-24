@@ -574,6 +574,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 .user-item .reject-btn { background: #f0f0f0; color: var(--text); }
 .user-item .delete-btn { background: var(--danger); color: white; }
 .user-item .role-switch-btn { background: #1565c0; color: white; }
+.user-item .reset-btn { background: #ff9800; color: white; }
 .user-item .approved-badge { background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); white-space: nowrap; }
 
 .about-content { text-align: center; }
@@ -2117,6 +2118,7 @@ async function showUserManagement() {
           <div class="actions">
             ${!isSelf ? `<button class="action-btn role-switch-btn btn-touch" onclick="switchUserRole('${u.id}', '${u.role}')">${switchRoleLabel}</button>` : ''}
             ${!isSelf && !u.approved ? `<button class="action-btn approve-btn btn-touch" onclick="approveExistingUser('${u.id}')">批准</button>` : ''}
+            ${!isSelf ? `<button class="action-btn reset-btn btn-touch" onclick="resetUserPassword('${u.id}', '${u.name}')">重置密码</button>` : ''}
             ${!isSelf ? `<button class="action-btn delete-btn btn-touch" onclick="deleteUser('${u.id}')">删除</button>` : ''}
           </div>
         </div>
@@ -2134,6 +2136,25 @@ async function rejectPendingUser(id) { await supabase.from('pending_users').dele
 async function approveExistingUser(id) { await supabase.from('users').update({ approved: true, role: 'inspector' }).eq('id', id); showToast('已批准', 'success'); await loadPendingUsersCount(); showUserManagement(); }
 
 async function deleteUser(id) { if (id === currentUser?.id) { showToast('不能删除自己', 'error'); return; } await supabase.from('users').delete().eq('id', id); showToast('已删除', 'success'); await loadPendingUsersCount(); showUserManagement(); }
+
+async function resetUserPassword(userId, userName) {
+  if (!confirm(`确认将「${userName}」的密码重置为 123456 ？`)) return;
+  try {
+    const res = await fetch('/api/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, newPassword: '123456' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(`${userName} 密码已重置为 123456`, 'success');
+    } else {
+      showToast('重置失败：' + (data.error || '未知错误'), 'error');
+    }
+  } catch (err) {
+    showToast('重置失败：网络错误', 'error');
+  }
+}
 
 function showAboutModal() { document.getElementById('aboutModal').classList.add('show'); }
 function closeAboutModal() { document.getElementById('aboutModal').classList.remove('show'); }
