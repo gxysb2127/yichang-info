@@ -19,9 +19,9 @@
   <link rel="icon" href="logo.jpg">
   <link rel="apple-touch-icon" href="icon-192.png">
   
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="vendor/supabase.min.js"></script>
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/xlsx.full.min.js"></script>
   <style>
 :root {
   --primary: #1a73e8;
@@ -1152,7 +1152,7 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.6; }
 // ============================================
 // 配置区域
 // ============================================
-const SUPABASE_URL = 'https://gniwmbfpntgqguubxwwj.supabase.co';
+const SUPABASE_URL = self.location.origin;
 const SUPABASE_ANON_KEY = 'sb_publishable_a5C8NQ3_cnk5PPvU7P25Uw_IoCVsxUf';
 
 // ============================================
